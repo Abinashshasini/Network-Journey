@@ -1,9 +1,8 @@
 <div align="center">
 
-# ⚡ NETWORK JOURNEY
+<img src="public/banner.svg" alt="Network Journey" width="100%" />
 
-### _Experience the Internet Like Never Before_
-
+<br />
 <br />
 
 **A cinematic 3D voyage through the invisible infrastructure that powers every click, every search, every connection.**

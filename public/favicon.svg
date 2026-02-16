@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6"/>
+      <stop offset="100%" style="stop-color:#8b5cf6"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="0.5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="16" cy="16" r="15" fill="#0f172a"/>
+  <circle cx="16" cy="16" r="14" fill="none" stroke="url(#grad)" stroke-width="1.5"/>
+  
+  <!-- Network nodes -->
+  <g filter="url(#glow)">
+    <!-- Center node -->
+    <circle cx="16" cy="16" r="3" fill="url(#grad)"/>
+    
+    <!-- Outer nodes -->
+    <circle cx="8" cy="10" r="2" fill="#3b82f6"/>
+    <circle cx="24" cy="10" r="2" fill="#8b5cf6"/>
+    <circle cx="8" cy="22" r="2" fill="#06b6d4"/>
+    <circle cx="24" cy="22" r="2" fill="#22c55e"/>
+    
+    <!-- Connection lines -->
+    <line x1="16" y1="16" x2="8" y2="10" stroke="#3b82f6" stroke-width="1" opacity="0.8"/>
+    <line x1="16" y1="16" x2="24" y2="10" stroke="#8b5cf6" stroke-width="1" opacity="0.8"/>
+    <line x1="16" y1="16" x2="8" y2="22" stroke="#06b6d4" stroke-width="1" opacity="0.8"/>
+    <line x1="16" y1="16" x2="24" y2="22" stroke="#22c55e" stroke-width="1" opacity="0.8"/>
+  </g>
+  
+  <!-- Data packet -->
+  <circle cx="12" cy="13" r="1.5" fill="#f59e0b"/>
+</svg>

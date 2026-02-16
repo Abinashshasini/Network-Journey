@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 120">
+  <defs>
+    <!-- Gradient for the main text -->
+    <linearGradient id="textGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6"/>
+      <stop offset="50%" style="stop-color:#8b5cf6"/>
+      <stop offset="100%" style="stop-color:#06b6d4"/>
+    </linearGradient>
+    
+    <!-- Glow filter -->
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    
+    <!-- Network node gradient -->
+    <radialGradient id="nodeGradient" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#60a5fa"/>
+      <stop offset="100%" style="stop-color:#3b82f6"/>
+    </radialGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="400" height="120" fill="#0f172a" rx="8"/>
+  
+  <!-- Network nodes and connections -->
+  <g filter="url(#glow)">
+    <!-- Connection lines -->
+    <line x1="30" y1="60" x2="60" y2="40" stroke="#3b82f6" stroke-width="2" opacity="0.6"/>
+    <line x1="60" y1="40" x2="90" y2="60" stroke="#8b5cf6" stroke-width="2" opacity="0.6"/>
+    <line x1="30" y1="60" x2="60" y2="80" stroke="#3b82f6" stroke-width="2" opacity="0.6"/>
+    <line x1="60" y1="80" x2="90" y2="60" stroke="#8b5cf6" stroke-width="2" opacity="0.6"/>
+    
+    <!-- Nodes -->
+    <circle cx="30" cy="60" r="6" fill="url(#nodeGradient)"/>
+    <circle cx="60" cy="40" r="4" fill="#8b5cf6"/>
+    <circle cx="60" cy="80" r="4" fill="#8b5cf6"/>
+    <circle cx="90" cy="60" r="6" fill="url(#nodeGradient)"/>
+    
+    <!-- Data packet (animated feel) -->
+    <circle cx="45" cy="50" r="3" fill="#22c55e"/>
+    <circle cx="75" cy="70" r="3" fill="#06b6d4"/>
+  </g>
+  
+  <!-- Main title -->
+  <text x="115" y="55" font-family="Inter, system-ui, sans-serif" font-size="28" font-weight="800" fill="url(#textGradient)" filter="url(#glow)">
+    NETWORK
+  </text>
+  <text x="115" y="85" font-family="Inter, system-ui, sans-serif" font-size="28" font-weight="800" fill="url(#textGradient)" filter="url(#glow)">
+    JOURNEY
+  </text>
+  
+  <!-- Accent line -->
+  <rect x="280" y="35" width="3" height="50" fill="url(#textGradient)" rx="1.5"/>
+  
+  <!-- Tagline -->
+  <text x="295" y="55" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#94a3b8" letter-spacing="0.5">
+    VISUALIZE
+  </text>
+  <text x="295" y="70" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#94a3b8" letter-spacing="0.5">
+    THE INVISIBLE
+  </text>
+  <text x="295" y="85" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#94a3b8" letter-spacing="0.5">
+    INTERNET
+  </text>
+  
+  <!-- Star streaks (warp effect hint) -->
+  <g opacity="0.4">
+    <line x1="350" y1="25" x2="380" y2="20" stroke="#60a5fa" stroke-width="1"/>
+    <line x1="360" y1="95" x2="385" y2="100" stroke="#8b5cf6" stroke-width="1"/>
+    <line x1="355" y1="60" x2="390" y2="58" stroke="#06b6d4" stroke-width="1"/>
+  </g>
+</svg>
