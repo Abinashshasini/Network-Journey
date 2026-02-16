@@ -1,0 +1,53 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html,
+body {
+    width: 100%;
+    overscroll-behavior: none;
+    scroll-behavior: auto;
+    /* Let Lenis handle smooth scroll */
+}
+
+html.lenis,
+html.lenis body {
+    height: auto;
+}
+
+.lenis.lenis-smooth {
+    scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+    overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+    overflow: hidden;
+}
+
+body {
+    background: #0f172a;
+    overflow-y: scroll;
+    overflow-x: hidden;
+}
+
+.canvas-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.scroll-container {
+    position: relative;
+    width: 100%;
+    height: 1500vh;
+    z-index: 1;
+}
