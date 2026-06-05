@@ -44,6 +44,16 @@ export default function SmoothScroll({ children }) {
     // Disable GSAP's default lag smoothing for better sync
     gsap.ticker.lagSmoothing(0);
 
+    // Refresh ScrollTrigger after Lenis is fully initialized and DOM is settled
+    // This is critical: without this, GSAP won't know the scroll container height
+    const refreshTimer = setTimeout(() => {
+      ScrollTrigger.refresh(true);
+    }, 200);
+
+    const refreshTimer2 = setTimeout(() => {
+      ScrollTrigger.refresh(true);
+    }, 800);
+
     // Refresh ScrollTrigger on resize
     const handleResize = () => {
       ScrollTrigger.refresh();
@@ -52,6 +62,8 @@ export default function SmoothScroll({ children }) {
 
     // Cleanup
     return () => {
+      clearTimeout(refreshTimer);
+      clearTimeout(refreshTimer2);
       lenis.destroy();
       gsap.ticker.remove(lenis.raf);
       window.removeEventListener('resize', handleResize);

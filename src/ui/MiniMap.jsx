@@ -1,34 +1,23 @@
-import { useState, useEffect } from 'react';
+import { useScrollProgress } from '../stores/scrollStore';
 
 const nodes = [
-  { x: 10, y: 15, label: '💻', name: 'Laptop', progress: 0 },
-  { x: 20, y: 15, label: '📡', name: 'Router', progress: 0.08 },
-  { x: 30, y: 15, label: '🔄', name: 'NAT', progress: 0.12 },
-  { x: 45, y: 20, label: '🏢', name: 'ISP', progress: 0.18 },
-  { x: 60, y: 30, label: '🌊', name: 'Cable', progress: 0.22 },
-  { x: 75, y: 35, label: '🔍', name: 'DNS', progress: 0.28 },
-  { x: 90, y: 45, label: '⚖️', name: 'LB', progress: 0.35 },
-  { x: 90, y: 60, label: '🖥️', name: 'Server', progress: 0.45 },
-  { x: 75, y: 70, label: '🔒', name: 'SSL', progress: 0.56 },
-  { x: 55, y: 75, label: '📄', name: 'HTTP', progress: 0.65 },
-  { x: 30, y: 80, label: '🎨', name: 'Render', progress: 0.8 },
-  { x: 10, y: 85, label: '✅', name: 'Done', progress: 0.95 },
+  { x: 10, y: 10, label: '💻', name: 'Laptop', progress: 0 },
+  { x: 18, y: 12, label: '📡', name: 'Router', progress: 0.08 },
+  { x: 26, y: 14, label: '🔄', name: 'NAT', progress: 0.13 },
+  { x: 38, y: 18, label: '🏢', name: 'ISP', progress: 0.16 },
+  { x: 52, y: 28, label: '🌊', name: 'Cable', progress: 0.20 },
+  { x: 66, y: 34, label: '🔍', name: 'DNS', progress: 0.25 },
+  { x: 75, y: 40, label: '🌐', name: 'CDN', progress: 0.30 },
+  { x: 82, y: 48, label: '🤝', name: 'TCP', progress: 0.36 },
+  { x: 88, y: 56, label: '🔒', name: 'SSL', progress: 0.46 },
+  { x: 82, y: 64, label: '📄', name: 'HTTP', progress: 0.58 },
+  { x: 55, y: 72, label: '🎨', name: 'Render', progress: 0.72 },
+  { x: 30, y: 80, label: '🎮', name: 'GPU', progress: 0.88 },
+  { x: 10, y: 88, label: '✅', name: 'Done', progress: 0.95 },
 ];
 
 export default function MiniMap() {
-  const [progress, setProgress] = useState(0);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrollTop = window.scrollY;
-      const docHeight =
-        document.documentElement.scrollHeight - window.innerHeight;
-      setProgress(docHeight > 0 ? scrollTop / docHeight : 0);
-    };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll();
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  const progress = useScrollProgress();
 
   const getActiveNodeIndex = () => {
     for (let i = nodes.length - 1; i >= 0; i--) {
@@ -39,21 +28,15 @@ export default function MiniMap() {
 
   const activeIndex = getActiveNodeIndex();
 
-  // Generate SVG path through all nodes
   const pathD = nodes
     .map((node, i) => `${i === 0 ? 'M' : 'L'} ${node.x} ${node.y}`)
     .join(' ');
 
-  // Calculate path length for animation
   const getPathProgress = () => {
-    if (activeIndex === 0)
-      return (progress / nodes[0].progress) * (1 / nodes.length);
-
+    if (activeIndex === 0) return 0;
     const prevNode = nodes[activeIndex];
     const nextNode = nodes[activeIndex + 1];
-
     if (!nextNode) return 1;
-
     const segmentProgress =
       (progress - prevNode.progress) / (nextNode.progress - prevNode.progress);
     return (activeIndex + segmentProgress) / (nodes.length - 1);
@@ -75,29 +58,40 @@ export default function MiniMap() {
         bottom: '20px',
         left: '20px',
         width: '200px',
-        height: '140px',
-        background: 'rgba(15, 23, 42, 0.95)',
+        height: '150px',
+        /* Glassmorphism */
+        background: 'rgba(6, 10, 20, 0.38)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
         borderRadius: '12px',
-        border: '1px solid #334155',
+        border: '1px solid rgba(255,255,255,0.05)',
         padding: '12px',
         zIndex: 100,
-        backdropFilter: 'blur(10px)',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.35)',
       }}
     >
+      {/* Inner glass sheen */}
+      <div style={{
+        position: 'absolute', top: 0, left: 0, right: 0, height: '50%',
+        background: 'linear-gradient(160deg, rgba(255,255,255,0.04) 0%, transparent 60%)',
+        borderRadius: '14px 14px 0 0',
+        pointerEvents: 'none',
+      }} />
+
       <div
         style={{
-          fontSize: '10px',
-          color: '#64748b',
+          fontSize: '9px',
+          color: '#475569',
           marginBottom: '8px',
           textTransform: 'uppercase',
-          letterSpacing: '1px',
+          letterSpacing: '1.5px',
+          fontFamily: '"SF Mono", ui-monospace, monospace',
         }}
       >
         Journey Map
       </div>
 
-      <svg width="176" height="100" viewBox="0 0 100 100">
-        {/* Background path */}
+      <svg width="176" height="110" viewBox="0 0 100 100">
         <path
           d={pathD}
           fill="none"
@@ -107,11 +101,10 @@ export default function MiniMap() {
           strokeLinejoin="round"
         />
 
-        {/* Animated progress path */}
         <path
           d={pathD}
           fill="none"
-          stroke="url(#gradient)"
+          stroke="url(#minimap-gradient)"
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -120,16 +113,21 @@ export default function MiniMap() {
           style={{ transition: 'stroke-dashoffset 0.3s ease-out' }}
         />
 
-        {/* Gradient definition */}
         <defs>
-          <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <linearGradient
+            id="minimap-gradient"
+            x1="0%"
+            y1="0%"
+            x2="100%"
+            y2="100%"
+          >
             <stop offset="0%" stopColor="#3b82f6" />
-            <stop offset="50%" stopColor="#8b5cf6" />
+            <stop offset="33%" stopColor="#8b5cf6" />
+            <stop offset="66%" stopColor="#ec4899" />
             <stop offset="100%" stopColor="#22c55e" />
           </linearGradient>
         </defs>
 
-        {/* Nodes */}
         {nodes.map((node, i) => {
           const isActive = i <= activeIndex;
           const isCurrent = i === activeIndex;
@@ -140,7 +138,6 @@ export default function MiniMap() {
               style={{ cursor: 'pointer' }}
               onClick={() => handleNodeClick(node.progress)}
             >
-              {/* Glow effect for current node */}
               {isCurrent && (
                 <circle
                   cx={node.x}
@@ -164,7 +161,6 @@ export default function MiniMap() {
                 </circle>
               )}
 
-              {/* Node circle */}
               <circle
                 cx={node.x}
                 cy={node.y}
@@ -175,7 +171,6 @@ export default function MiniMap() {
                 style={{ transition: 'all 0.3s' }}
               />
 
-              {/* Node emoji */}
               <text
                 x={node.x}
                 y={node.y + 3}
@@ -189,7 +184,6 @@ export default function MiniMap() {
           );
         })}
 
-        {/* Current position indicator - moving dot */}
         <circle
           cx={nodes[activeIndex].x}
           cy={nodes[activeIndex].y}

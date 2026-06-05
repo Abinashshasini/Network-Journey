@@ -1,41 +1,24 @@
-import { useState, useEffect } from 'react';
+import { useScrollProgressPercent } from '../stores/scrollStore';
 
 const phases = [
-  { name: 'Network', start: 0, end: 8, color: '#3b82f6' },
-  { name: 'ARP', start: 8, end: 12, color: '#f97316' },
-  { name: 'NAT', start: 12, end: 18, color: '#eab308' },
-  { name: 'DNS', start: 18, end: 28, color: '#8b5cf6' },
-  { name: 'TCP', start: 28, end: 42, color: '#06b6d4' },
-  { name: 'SSL', start: 42, end: 56, color: '#22c55e' },
-  { name: 'HTTP', start: 56, end: 72, color: '#ef4444' },
-  { name: 'Render', start: 72, end: 100, color: '#ec4899' },
+  { name: 'Network', start: 0, end: 10, color: '#3b82f6' },
+  { name: 'ARP', start: 10, end: 14, color: '#f97316' },
+  { name: 'NAT', start: 14, end: 18, color: '#eab308' },
+  { name: 'Cable', start: 18, end: 22, color: '#06b6d4' },
+  { name: 'DNS', start: 22, end: 32, color: '#8b5cf6' },
+  { name: 'TCP', start: 32, end: 42, color: '#22c55e' },
+  { name: 'SSL', start: 42, end: 54, color: '#ec4899' },
+  { name: 'HTTP', start: 54, end: 66, color: '#ef4444' },
+  { name: 'Render', start: 66, end: 94, color: '#a855f7' },
+  { name: 'Done', start: 94, end: 100, color: '#22c55e' },
 ];
 
 export default function ProgressBar() {
-  const [progress, setProgress] = useState(0);
+  const progress = useScrollProgressPercent();
 
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrollTop = window.scrollY;
-      const docHeight =
-        document.documentElement.scrollHeight - window.innerHeight;
-      const scrollPercent = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
-      setProgress(scrollPercent);
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll();
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  const getCurrentPhase = () => {
-    return (
-      phases.find((p) => progress >= p.start && progress < p.end) ||
-      phases[phases.length - 1]
-    );
-  };
-
-  const currentPhase = getCurrentPhase();
+  const currentPhase =
+    phases.find((p) => progress >= p.start && progress < p.end) ||
+    phases[phases.length - 1];
 
   return (
     <div
@@ -48,33 +31,31 @@ export default function ProgressBar() {
         pointerEvents: 'none',
       }}
     >
-      {/* Progress bar background */}
-      <div
-        style={{
-          height: '4px',
-          backgroundColor: '#1e293b',
-        }}
-      >
-        {/* Progress fill with gradient */}
+      {/* Slim progress track */}
+      <div style={{ height: '2px', background: 'rgba(15,23,42,0.4)' }}>
         <div
           style={{
             height: '100%',
             width: `${progress}%`,
-            background: `linear-gradient(90deg, #3b82f6, #8b5cf6, #06b6d4, #22c55e, #ef4444, #ec4899)`,
-            transition: 'width 0.1s ease-out',
-            boxShadow: '0 0 10px rgba(59, 130, 246, 0.5)',
+            background:
+              'linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899, #22c55e)',
+            transition: 'width 0.1s linear',
+            boxShadow: `0 0 6px ${currentPhase.color}80`,
           }}
         />
       </div>
 
-      {/* Phase indicators */}
+      {/* Very recessive phase label strip */}
       <div
         style={{
           display: 'flex',
           justifyContent: 'space-between',
-          padding: '8px 20px',
-          background:
-            'linear-gradient(to bottom, rgba(15, 23, 42, 0.9), transparent)',
+          alignItems: 'center',
+          padding: '5px 20px',
+          background: 'rgba(6, 10, 20, 0.35)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          borderBottom: '1px solid rgba(255,255,255,0.04)',
         }}
       >
         {phases.map((phase, i) => {
@@ -88,27 +69,28 @@ export default function ProgressBar() {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '4px',
-                opacity: isActive ? 1 : 0.4,
-                transition: 'all 0.3s',
+                opacity: isCurrent ? 1 : isActive ? 0.6 : 0.25,
+                transition: 'opacity 0.4s ease',
               }}
             >
               <div
                 style={{
-                  width: '8px',
-                  height: '8px',
+                  width: isCurrent ? '8px' : '6px',
+                  height: isCurrent ? '8px' : '6px',
                   borderRadius: '50%',
-                  backgroundColor: isActive ? phase.color : '#475569',
-                  boxShadow: isCurrent ? `0 0 8px ${phase.color}` : 'none',
-                  transition: 'all 0.3s',
+                  background: isActive ? phase.color : '#334155',
+                  boxShadow: isCurrent ? `0 0 6px ${phase.color}` : 'none',
+                  transition: 'all 0.4s ease',
+                  flexShrink: 0,
                 }}
               />
               <span
                 style={{
                   fontSize: '10px',
                   fontFamily: 'monospace',
-                  color: isActive ? '#e2e8f0' : '#64748b',
-                  fontWeight: isCurrent ? 'bold' : 'normal',
-                  transition: 'all 0.3s',
+                  color: isCurrent ? '#e2e8f0' : '#64748b',
+                  fontWeight: isCurrent ? 600 : 400,
+                  transition: 'all 0.4s ease',
                 }}
               >
                 {phase.name}

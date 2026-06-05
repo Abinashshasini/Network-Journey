@@ -1,4 +1,5 @@
-// Detailed explanations for each phase
+import { useState, useEffect, useRef } from 'react';
+
 const phaseExplanations = {
   'User types google.com': {
     title: 'User Input',
@@ -25,6 +26,48 @@ const phaseExplanations = {
       'Includes any cookies for the domain',
     ],
     icon: '📝',
+  },
+  'Service Worker: Checking cache...': {
+    title: 'Service Worker Check',
+    phase: 1,
+    color: '#8b5cf6',
+    description:
+      'Before hitting the network, the browser checks if a Service Worker intercepts this request.',
+    details: [
+      'Service Workers run in a separate thread from the main page',
+      'Can intercept fetch requests and serve cached responses',
+      'Enables offline-first Progressive Web Apps (PWAs)',
+      'If no match in cache, the request continues to the network',
+    ],
+    icon: '⚙️',
+  },
+  'Service Worker: Cache MISS → Network': {
+    title: 'Cache Miss',
+    phase: 1,
+    color: '#8b5cf6',
+    description:
+      'No cached response found. The request will proceed through the full network stack.',
+    details: [
+      "First visit to google.com - nothing in the SW cache yet",
+      'On subsequent visits, the SW could serve cached resources instantly',
+      'Cache strategies: Cache First, Network First, Stale While Revalidate',
+    ],
+    icon: '❌',
+  },
+  'OS: Socket creation & network stack': {
+    title: 'OS Network Stack',
+    phase: 1,
+    color: '#06b6d4',
+    description:
+      'The OS creates a socket and the request travels down through the network stack layers.',
+    details: [
+      'Application Layer: HTTP request data',
+      'Transport Layer: TCP segments with port numbers',
+      'Network Layer: IP packets with source/destination IPs',
+      'Data Link Layer: Ethernet frames with MAC addresses',
+      'Physical Layer: Electrical signals, radio waves, or light pulses',
+    ],
+    icon: '🔧',
   },
   'ARP: Who has 192.168.1.1?': {
     title: 'ARP Request',
@@ -69,13 +112,13 @@ const phaseExplanations = {
   },
   'NAT: 192.168.1.5 → 203.45.67.89': {
     title: 'NAT Translation',
-    phase: 1,
+    phase: 2,
     color: '#eab308',
     description:
       'Network Address Translation converts your private IP to a public IP for internet routing.',
     details: [
       'Private IPs (192.168.x.x) cannot be routed on the internet',
-      'NAT maps: Private IP:Port → Public IP:Port',
+      'NAT maps: Private IP:Port -> Public IP:Port',
       'Creates entry in NAT table to track the connection',
       'Enables multiple devices to share one public IP',
     ],
@@ -83,7 +126,7 @@ const phaseExplanations = {
   },
   'Router forwarding to ISP...': {
     title: 'ISP Connection',
-    phase: 1,
+    phase: 2,
     color: '#3b82f6',
     description:
       "Your router forwards the request to your Internet Service Provider's network.",
@@ -94,9 +137,24 @@ const phaseExplanations = {
     ],
     icon: '🏢',
   },
+  'BGP: Routing through autonomous systems': {
+    title: 'BGP Routing',
+    phase: 2,
+    color: '#f97316',
+    description:
+      'The Border Gateway Protocol determines the best path across the internet backbone.',
+    details: [
+      'BGP connects Autonomous Systems (AS) - large network domains',
+      'Each AS has a unique number (e.g., Google is AS15169)',
+      'BGP routers exchange routing tables with neighbors',
+      'Path selection considers: shortest AS path, policies, and peering agreements',
+      'Your packet may traverse 5-15 autonomous systems to reach Google',
+    ],
+    icon: '🌐',
+  },
   'Traveling through submarine cable...': {
     title: 'Submarine Cable',
-    phase: 1,
+    phase: 2,
     color: '#06b6d4',
     description:
       'Data crosses oceans through fiber optic cables laid on the ocean floor.',
@@ -104,38 +162,39 @@ const phaseExplanations = {
       'Over 400 submarine cables connect continents',
       'Light pulses travel at ~200,000 km/s through fiber',
       'Cables are only about 17mm thick but carry 99% of intercontinental data',
+      'Repeaters boost the signal every 50-100km along the cable',
     ],
     icon: '🌊',
   },
   'Reaching DNS Server...': {
     title: 'DNS Server',
-    phase: 2,
+    phase: 3,
     color: '#8b5cf6',
     description:
       'The request reaches a DNS (Domain Name System) server to resolve the domain name.',
     details: [
       "DNS is like the internet's phone book",
       'Translates human-readable domain names to IP addresses',
-      'Hierarchical system: Root → TLD → Authoritative servers',
+      'Hierarchical system: Root -> TLD -> Authoritative servers',
     ],
     icon: '📖',
   },
   'DNS Query: "What is google.com?"': {
     title: 'DNS Query',
-    phase: 2,
+    phase: 3,
     color: '#8b5cf6',
     description:
       "Your browser asks the DNS resolver: 'What is the IP address for google.com?'",
     details: [
       'Query type: A record (IPv4) or AAAA record (IPv6)',
       'Recursive resolver checks its cache first',
-      'If not cached, queries root → .com TLD → google.com authoritative server',
+      'If not cached, queries root -> .com TLD -> google.com authoritative server',
     ],
     icon: '❓',
   },
   'DNS Response: 142.250.190.14': {
     title: 'DNS Response',
-    phase: 2,
+    phase: 3,
     color: '#8b5cf6',
     description: "DNS server responds with google.com's IP address.",
     details: [
@@ -145,10 +204,25 @@ const phaseExplanations = {
     ],
     icon: '✅',
   },
+  'CDN Edge: Cache check → MISS': {
+    title: 'CDN Edge Check',
+    phase: 3,
+    color: '#06b6d4',
+    description:
+      'Before reaching the origin server, the request hits a CDN edge node that checks for cached content.',
+    details: [
+      'CDN = Content Delivery Network (e.g., Cloudflare, Akamai)',
+      'Edge nodes are geographically distributed near users',
+      'Static assets (images, CSS, JS) are often cached at the edge',
+      'Cache MISS: This is a dynamic page request, so we continue to origin',
+      'Cache HIT would have returned the response in < 10ms!',
+    ],
+    icon: '🌐',
+  },
   'Initiating TCP connection...': {
     title: 'TCP Connection',
-    phase: 3,
-    color: '#f97316',
+    phase: 4,
+    color: '#22c55e',
     description:
       'Before sending data, a reliable TCP connection must be established.',
     details: [
@@ -160,8 +234,8 @@ const phaseExplanations = {
   },
   'TCP: Sending SYN packet →': {
     title: 'SYN - Step 1 of 3',
-    phase: 3,
-    color: '#f97316',
+    phase: 4,
+    color: '#22c55e',
     description:
       'Client sends SYN (synchronize) packet to initiate connection.',
     details: [
@@ -173,8 +247,8 @@ const phaseExplanations = {
   },
   'TCP: Received SYN-ACK ←': {
     title: 'SYN-ACK - Step 2 of 3',
-    phase: 3,
-    color: '#f97316',
+    phase: 4,
+    color: '#22c55e',
     description: 'Server acknowledges and sends its own synchronization.',
     details: [
       'Server sets both SYN and ACK flags',
@@ -185,7 +259,7 @@ const phaseExplanations = {
   },
   'TCP: Sending ACK → Connected!': {
     title: 'ACK - Step 3 of 3',
-    phase: 3,
+    phase: 4,
     color: '#22c55e',
     description:
       'Client acknowledges server, completing the three-way handshake.',
@@ -198,7 +272,7 @@ const phaseExplanations = {
   },
   'Starting SSL/TLS Handshake...': {
     title: 'SSL/TLS Handshake',
-    phase: 4,
+    phase: 5,
     color: '#ec4899',
     description:
       'On top of TCP, TLS creates an encrypted tunnel for secure communication.',
@@ -211,7 +285,7 @@ const phaseExplanations = {
   },
   'SSL: Client Hello →': {
     title: 'Client Hello',
-    phase: 4,
+    phase: 5,
     color: '#ec4899',
     description: 'Client announces supported TLS versions and cipher suites.',
     details: [
@@ -223,7 +297,7 @@ const phaseExplanations = {
   },
   'SSL: Server Hello + Certificate ←': {
     title: 'Server Hello',
-    phase: 4,
+    phase: 5,
     color: '#ec4899',
     description: 'Server responds with chosen cipher and its certificate.',
     details: [
@@ -235,7 +309,7 @@ const phaseExplanations = {
   },
   'SSL: Key Exchange →': {
     title: 'Key Exchange',
-    phase: 4,
+    phase: 5,
     color: '#ec4899',
     description: 'Both parties exchange data to derive shared secret keys.',
     details: [
@@ -247,7 +321,7 @@ const phaseExplanations = {
   },
   'SSL: Secure connection established! 🔒': {
     title: 'Secure Connection',
-    phase: 4,
+    phase: 5,
     color: '#22c55e',
     description: 'TLS handshake complete. All data is now encrypted.',
     details: [
@@ -259,8 +333,8 @@ const phaseExplanations = {
   },
   'Sending encrypted HTTP GET request...': {
     title: 'HTTPS Request',
-    phase: 5,
-    color: '#3b82f6',
+    phase: 6,
+    color: '#f97316',
     description: 'The actual HTTP request is now sent, encrypted within TLS.',
     details: [
       'GET / HTTP/1.1 or HTTP/2 request',
@@ -271,7 +345,7 @@ const phaseExplanations = {
   },
   'Load Balancer: Routing to server...': {
     title: 'Load Balancing',
-    phase: 5,
+    phase: 6,
     color: '#06b6d4',
     description:
       "Google's load balancer distributes your request across thousands of servers.",
@@ -285,8 +359,8 @@ const phaseExplanations = {
   },
   'Server processing request...': {
     title: 'Server Processing',
-    phase: 5,
-    color: '#3b82f6',
+    phase: 6,
+    color: '#f97316',
     description: "Google's servers process your request.",
     details: [
       'Request reaches one of thousands of identical servers',
@@ -297,7 +371,7 @@ const phaseExplanations = {
   },
   'Server sends HTML response ←': {
     title: 'HTML Response',
-    phase: 5,
+    phase: 6,
     color: '#10b981',
     description: 'Server responds with HTML document.',
     details: [
@@ -309,8 +383,8 @@ const phaseExplanations = {
   },
   'Browser requests CSS & JS files...': {
     title: 'Additional Requests',
-    phase: 5,
-    color: '#3b82f6',
+    phase: 6,
+    color: '#f97316',
     description: 'Browser parses HTML and discovers additional resources.',
     details: [
       'Finds <link>, <script>, <img> tags',
@@ -321,7 +395,7 @@ const phaseExplanations = {
   },
   'Receiving CSS & JS files ←': {
     title: 'Resource Download',
-    phase: 5,
+    phase: 6,
     color: '#10b981',
     description: 'CSS and JavaScript files are downloaded.',
     details: [
@@ -333,20 +407,20 @@ const phaseExplanations = {
   },
   '📊 Network Waterfall Timeline': {
     title: 'Network Waterfall',
-    phase: 6,
+    phase: 7,
     color: '#8b5cf6',
     description: 'Visual timeline of all network requests and their timing.',
     details: [
       'Shows DNS, TCP, SSL, Request, TTFB, Download phases',
       'Helps identify performance bottlenecks',
-      'Available in browser DevTools → Network tab',
+      'Available in browser DevTools -> Network tab',
     ],
     icon: '📊',
   },
   'Parsing HTML → Building DOM Tree': {
     title: 'DOM Construction',
-    phase: 7,
-    color: '#f97316',
+    phase: 8,
+    color: '#a855f7',
     description: 'Browser parses HTML and builds the Document Object Model.',
     details: [
       'Tokenizes HTML into tags and text',
@@ -357,8 +431,8 @@ const phaseExplanations = {
   },
   'Parsing CSS → Building CSSOM': {
     title: 'CSSOM Construction',
-    phase: 7,
-    color: '#3b82f6',
+    phase: 8,
+    color: '#a855f7',
     description: 'CSS is parsed into the CSS Object Model.',
     details: [
       'Parses stylesheets into rules',
@@ -369,8 +443,8 @@ const phaseExplanations = {
   },
   'Combining DOM + CSSOM → Render Tree': {
     title: 'Render Tree',
-    phase: 7,
-    color: '#22c55e',
+    phase: 8,
+    color: '#a855f7',
     description: 'DOM and CSSOM combine to create the Render Tree.',
     details: [
       'Only visible elements are included',
@@ -381,7 +455,7 @@ const phaseExplanations = {
   },
   'JavaScript Execution & Hydration': {
     title: 'JavaScript Execution',
-    phase: 7,
+    phase: 8,
     color: '#eab308',
     description: 'JavaScript is parsed, compiled, and executed.',
     details: [
@@ -427,6 +501,20 @@ const phaseExplanations = {
     ],
     icon: '🎮',
   },
+  '📊 Web Vitals: LCP, FID, CLS': {
+    title: 'Core Web Vitals',
+    phase: 9,
+    color: '#22c55e',
+    description: "Google's metrics for measuring real user experience quality.",
+    details: [
+      'LCP (Largest Contentful Paint): < 2.5s for good UX',
+      'FID (First Input Delay): < 100ms for responsiveness',
+      'CLS (Cumulative Layout Shift): < 0.1 for visual stability',
+      'INP (Interaction to Next Paint): replacing FID in 2024',
+      'These metrics directly impact Google search rankings',
+    ],
+    icon: '📊',
+  },
   '✓ Page Rendered @ 60 FPS!': {
     title: 'Page Complete!',
     phase: 9,
@@ -441,7 +529,6 @@ const phaseExplanations = {
   },
 };
 
-// Fallback for unmatched states
 const defaultExplanation = {
   title: 'Network Journey',
   phase: 1,
@@ -457,8 +544,18 @@ const defaultExplanation = {
 };
 
 export default function ExplanationSidebar({ state }) {
-  // Derive explanation directly from state
   const explanation = phaseExplanations[state] || defaultExplanation;
+  const prevStateRef = useRef(state);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+
+  useEffect(() => {
+    if (prevStateRef.current !== state) {
+      setIsTransitioning(true);
+      const timer = setTimeout(() => setIsTransitioning(false), 200);
+      prevStateRef.current = state;
+      return () => clearTimeout(timer);
+    }
+  }, [state]);
 
   return (
     <div
@@ -466,42 +563,46 @@ export default function ExplanationSidebar({ state }) {
         position: 'fixed',
         left: '20px',
         top: '50%',
-        transform: 'translateY(-50%)',
-        width: '320px',
-        maxHeight: '70vh',
-        background: 'rgba(15, 23, 42, 0.9)',
-        backdropFilter: 'blur(10px)',
-        borderRadius: '16px',
-        padding: '24px',
+        transform: `translateY(-50%) ${isTransitioning ? 'translateX(-5px)' : 'translateX(0)'}`,
+        width: '300px',
+        maxHeight: '65vh',
+        background: 'rgba(6, 10, 20, 0.45)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        borderRadius: '14px',
+        border: '1px solid rgba(255,255,255,0.06)',
+        borderLeft: `2px solid ${explanation.color}60`,
+        padding: '20px',
         fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
         zIndex: 1000,
-        boxShadow:
-          '0 4px 20px rgba(0, 0, 0, 0.4), 0 0 40px rgba(59, 130, 246, 0.1)',
-        border: '1px solid rgba(148, 163, 184, 0.2)',
+        boxShadow: `0 4px 24px rgba(0,0,0,0.4), 0 0 20px ${explanation.color}0d`,
         overflowY: 'auto',
-        transition: 'all 0.2s ease',
+        transition: 'transform 0.35s ease, opacity 0.25s ease, border-color 0.5s ease',
+        opacity: isTransitioning ? 0.5 : 1,
       }}
     >
+
       {/* Phase badge */}
       <div
         style={{
           display: 'inline-flex',
           alignItems: 'center',
           gap: '8px',
-          padding: '6px 12px',
+          padding: '5px 12px',
           borderRadius: '20px',
-          background: `${explanation.color}15`,
+          background: `${explanation.color}18`,
+          border: `1px solid ${explanation.color}30`,
           marginBottom: '16px',
         }}
       >
-        <span style={{ fontSize: '16px' }}>{explanation.icon}</span>
+        <span style={{ fontSize: '15px' }}>{explanation.icon}</span>
         <span
           style={{
-            fontSize: '12px',
-            fontWeight: 600,
+            fontSize: '11px',
+            fontWeight: 700,
             color: explanation.color,
             textTransform: 'uppercase',
-            letterSpacing: '0.5px',
+            letterSpacing: '1px',
           }}
         >
           Phase {explanation.phase}
@@ -511,11 +612,12 @@ export default function ExplanationSidebar({ state }) {
       {/* Title */}
       <h2
         style={{
-          margin: '0 0 12px 0',
+          margin: '0 0 10px 0',
           fontSize: '22px',
           fontWeight: 700,
-          color: '#f8fafc',
+          color: '#f1f5f9',
           lineHeight: 1.3,
+          textShadow: `0 0 20px ${explanation.color}30`,
         }}
       >
         {explanation.title}
@@ -524,10 +626,10 @@ export default function ExplanationSidebar({ state }) {
       {/* Description */}
       <p
         style={{
-          margin: '0 0 20px 0',
-          fontSize: '14px',
-          lineHeight: 1.6,
-          color: '#cbd5e1',
+          margin: '0 0 18px 0',
+          fontSize: '13.5px',
+          lineHeight: 1.65,
+          color: '#94a3b8',
         }}
       >
         {explanation.description}
@@ -537,22 +639,15 @@ export default function ExplanationSidebar({ state }) {
       <div
         style={{
           height: '1px',
-          background: 'rgba(148, 163, 184, 0.2)',
+          background: `linear-gradient(90deg, ${explanation.color}50, rgba(255,255,255,0.04), transparent)`,
           margin: '0 0 16px 0',
         }}
       />
 
       {/* Details list */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '11px' }}>
         {explanation.details.map((detail, i) => (
-          <div
-            key={i}
-            style={{
-              display: 'flex',
-              gap: '10px',
-              alignItems: 'flex-start',
-            }}
-          >
+          <div key={i} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
             <div
               style={{
                 width: '6px',
@@ -561,42 +656,31 @@ export default function ExplanationSidebar({ state }) {
                 background: explanation.color,
                 marginTop: '6px',
                 flexShrink: 0,
+                boxShadow: `0 0 6px ${explanation.color}, 0 0 12px ${explanation.color}60`,
               }}
             />
-            <p
-              style={{
-                margin: 0,
-                fontSize: '13px',
-                lineHeight: 1.5,
-                color: '#94a3b8',
-              }}
-            >
+            <p style={{ margin: 0, fontSize: '13px', lineHeight: 1.55, color: '#7f8ea3' }}>
               {detail}
             </p>
           </div>
         ))}
       </div>
 
-      {/* Scroll indicator */}
+      {/* Scroll hint */}
       <div
         style={{
           marginTop: '20px',
-          padding: '12px',
-          background: 'rgba(30, 41, 59, 0.5)',
-          borderRadius: '8px',
+          padding: '10px 14px',
+          background: 'rgba(255,255,255,0.03)',
+          borderRadius: '10px',
           display: 'flex',
           alignItems: 'center',
           gap: '8px',
-          border: '1px solid rgba(148, 163, 184, 0.1)',
+          border: '1px solid rgba(255,255,255,0.06)',
         }}
       >
-        <span style={{ fontSize: '14px' }}>↓</span>
-        <span
-          style={{
-            fontSize: '12px',
-            color: '#64748b',
-          }}
-        >
+        <span style={{ fontSize: '13px', color: `${explanation.color}cc` }}>↓</span>
+        <span style={{ fontSize: '11.5px', color: '#475569', letterSpacing: '0.3px' }}>
           Scroll to continue the journey
         </span>
       </div>

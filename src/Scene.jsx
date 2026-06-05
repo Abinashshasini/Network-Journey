@@ -1,9 +1,14 @@
 import { Canvas } from '@react-three/fiber';
 import { Environment } from '@react-three/drei';
 import { useState, useEffect } from 'react';
+import { initScrollStore, useScrollProgress } from './stores/scrollStore';
 
 // Core Systems
 import CameraRig from './CameraRig';
+
+// Effects
+import EnvironmentController from './effects/EnvironmentController';
+import PostProcessing from './effects/PostProcessing';
 
 // World
 import NetworkPath from './world/NetworkPath';
@@ -21,103 +26,76 @@ import MiniMap from './ui/MiniMap';
 // Hooks
 import useKeyboardNav from './hooks/useKeyboardNav';
 
+// State mapping from scroll progress to description
+function getSearchState(progress) {
+  if (progress < 0.02) return 'User types google.com';
+  if (progress < 0.04) return 'Browser creates HTTP request';
+  if (progress < 0.05) return 'Service Worker: Checking cache...';
+  if (progress < 0.06) return 'Service Worker: Cache MISS → Network';
+  if (progress < 0.07) return 'OS: Socket creation & network stack';
+  if (progress < 0.08) return 'ARP: Who has 192.168.1.1?';
+  if (progress < 0.09) return 'ARP: Router MAC: AA:BB:CC:11:22:33';
+  if (progress < 0.10) return 'Sending to Router via WiFi...';
+  // Rest zone 10-12%
+  if (progress < 0.12) return 'Sending to Router via WiFi...';
+  if (progress < 0.13) return 'NAT: 192.168.1.5 → 203.45.67.89';
+  if (progress < 0.14) return 'Router forwarding to ISP...';
+  if (progress < 0.16) return 'BGP: Routing through autonomous systems';
+  if (progress < 0.18) return 'Traveling through submarine cable...';
+  // Rest zone 20-22%
+  if (progress < 0.22) return 'Traveling through submarine cable...';
+  if (progress < 0.24) return 'Reaching DNS Server...';
+  if (progress < 0.27) return 'DNS Query: "What is google.com?"';
+  if (progress < 0.29) return 'DNS Response: 142.250.190.14';
+  if (progress < 0.30) return 'CDN Edge: Cache check → MISS';
+  // Rest zone 30-32%
+  if (progress < 0.32) return 'CDN Edge: Cache check → MISS';
+  if (progress < 0.34) return 'Initiating TCP connection...';
+  if (progress < 0.36) return 'TCP: Sending SYN packet →';
+  if (progress < 0.38) return 'TCP: Received SYN-ACK ←';
+  if (progress < 0.40) return 'TCP: Sending ACK → Connected!';
+  if (progress < 0.42) return 'Starting SSL/TLS Handshake...';
+  if (progress < 0.44) return 'SSL: Client Hello →';
+  if (progress < 0.46) return 'SSL: Server Hello + Certificate ←';
+  if (progress < 0.48) return 'SSL: Key Exchange →';
+  if (progress < 0.52) return 'SSL: Secure connection established! 🔒';
+  // Rest zone 52-54%
+  if (progress < 0.54) return 'SSL: Secure connection established! 🔒';
+  if (progress < 0.56) return 'Sending encrypted HTTP GET request...';
+  if (progress < 0.58) return 'Load Balancer: Routing to server...';
+  if (progress < 0.60) return 'Server processing request...';
+  if (progress < 0.62) return 'Server sends HTML response ←';
+  if (progress < 0.64) return 'Browser requests CSS & JS files...';
+  // Rest zone 64-66%
+  if (progress < 0.66) return 'Receiving CSS & JS files ←';
+  if (progress < 0.68) return '📊 Network Waterfall Timeline';
+  if (progress < 0.71) return 'Parsing HTML → Building DOM Tree';
+  if (progress < 0.74) return 'Parsing CSS → Building CSSOM';
+  if (progress < 0.77) return 'Combining DOM + CSSOM → Render Tree';
+  if (progress < 0.80) return 'JavaScript Execution & Hydration';
+  if (progress < 0.83) return 'Layout: Calculating positions & sizes';
+  if (progress < 0.86) return 'Paint: Drawing pixels to layers';
+  if (progress < 0.90) return '🎮 GPU Rendering Pipeline';
+  if (progress < 0.94) return '📊 Web Vitals: LCP, FID, CLS';
+  return '✓ Page Rendered @ 60 FPS!';
+}
+
 export default function Scene() {
   const [searchState, setSearchState] = useState('Ready to search...');
+  const progress = useScrollProgress();
+
+  // Init scroll store
+  useEffect(() => {
+    initScrollStore();
+  }, []);
 
   // Enable keyboard navigation
   useKeyboardNav();
 
-  // Track scroll progress for HUD state updates using native scroll
+  // Update search state from centralized progress
   useEffect(() => {
-    const updateState = () => {
-      const scrollTop = window.scrollY;
-      const docHeight =
-        document.documentElement.scrollHeight - window.innerHeight;
-      const progress = docHeight > 0 ? scrollTop / docHeight : 0;
-
-      if (progress < 0.02) {
-        setSearchState('User types google.com');
-      } else if (progress < 0.04) {
-        setSearchState('Browser creates HTTP request');
-      } else if (progress < 0.06) {
-        setSearchState('ARP: Who has 192.168.1.1?');
-      } else if (progress < 0.08) {
-        setSearchState('ARP: Router MAC: AA:BB:CC:11:22:33');
-      } else if (progress < 0.1) {
-        setSearchState('Sending to Router via WiFi...');
-      } else if (progress < 0.12) {
-        setSearchState('NAT: 192.168.1.5 → 203.45.67.89');
-      } else if (progress < 0.14) {
-        setSearchState('Router forwarding to ISP...');
-      } else if (progress < 0.16) {
-        setSearchState('Traveling through submarine cable...');
-      } else if (progress < 0.18) {
-        setSearchState('Reaching DNS Server...');
-      } else if (progress < 0.21) {
-        setSearchState('DNS Query: "What is google.com?"');
-      } else if (progress < 0.24) {
-        setSearchState('DNS Response: 142.250.190.14');
-      } else if (progress < 0.27) {
-        setSearchState('Initiating TCP connection...');
-      } else if (progress < 0.3) {
-        setSearchState('TCP: Sending SYN packet →');
-      } else if (progress < 0.33) {
-        setSearchState('TCP: Received SYN-ACK ←');
-      } else if (progress < 0.36) {
-        setSearchState('TCP: Sending ACK → Connected!');
-      } else if (progress < 0.39) {
-        setSearchState('Starting SSL/TLS Handshake...');
-      } else if (progress < 0.42) {
-        setSearchState('SSL: Client Hello →');
-      } else if (progress < 0.45) {
-        setSearchState('SSL: Server Hello + Certificate ←');
-      } else if (progress < 0.48) {
-        setSearchState('SSL: Key Exchange →');
-      } else if (progress < 0.51) {
-        setSearchState('SSL: Secure connection established! 🔒');
-      } else if (progress < 0.54) {
-        setSearchState('Sending encrypted HTTP GET request...');
-      } else if (progress < 0.57) {
-        setSearchState('Load Balancer: Routing to server...');
-      } else if (progress < 0.6) {
-        setSearchState('Server processing request...');
-      } else if (progress < 0.63) {
-        setSearchState('Server sends HTML response ←');
-      } else if (progress < 0.66) {
-        setSearchState('Browser requests CSS & JS files...');
-      } else if (progress < 0.68) {
-        setSearchState('Receiving CSS & JS files ←');
-      } else if (progress < 0.71) {
-        setSearchState('📊 Network Waterfall Timeline');
-      } else if (progress < 0.74) {
-        setSearchState('Parsing HTML → Building DOM Tree');
-      } else if (progress < 0.77) {
-        setSearchState('Parsing CSS → Building CSSOM');
-      } else if (progress < 0.8) {
-        setSearchState('Combining DOM + CSSOM → Render Tree');
-      } else if (progress < 0.84) {
-        setSearchState('JavaScript Execution & Hydration');
-      } else if (progress < 0.88) {
-        setSearchState('Layout: Calculating positions & sizes');
-      } else if (progress < 0.92) {
-        setSearchState('Paint: Drawing pixels to layers');
-      } else if (progress < 0.96) {
-        setSearchState('🎮 GPU Rendering Pipeline');
-      } else {
-        setSearchState('✓ Page Rendered @ 60 FPS!');
-      }
-    };
-
-    // Initial update
-    updateState();
-
-    // Listen to scroll events
-    window.addEventListener('scroll', updateState, { passive: true });
-
-    return () => {
-      window.removeEventListener('scroll', updateState);
-    };
-  }, []);
+    setSearchState(getSearchState(progress));
+  }, [progress]);
 
   return (
     <>
@@ -126,27 +104,13 @@ export default function Scene() {
 
       <div className="canvas-container">
         <Canvas camera={{ position: [-10, 3, 12], fov: 50 }}>
-          {/* Dark theme background */}
-          <color attach="background" args={['#0f172a']} />
-
-          {/* Atmospheric fog for depth */}
-          <fog attach="fog" args={['#0f172a', 30, 100]} />
-
-          {/* Dramatic lighting for dark theme */}
-          <ambientLight intensity={0.4} />
-          <directionalLight
-            position={[10, 20, 10]}
-            intensity={1.2}
-            color="#93c5fd"
-          />
-          <directionalLight
-            position={[-10, 10, -10]}
-            intensity={0.5}
-            color="#c4b5fd"
-          />
-          <pointLight position={[0, 5, 0]} intensity={0.5} color="#60a5fa" />
+          {/* Dynamic environment - replaces static bg/fog/lights */}
+          <EnvironmentController />
 
           <Environment preset="night" />
+
+          {/* Post-processing effects */}
+          <PostProcessing />
 
           {/* Background elements for immersion */}
           <BackgroundElements />

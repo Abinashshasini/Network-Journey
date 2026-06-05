@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import ScrollLayout from './ScrollLayout';
 import Scene from './Scene';
 import SmoothScroll from './components/SmoothScroll';
@@ -8,13 +8,20 @@ export default function App() {
   const [showLanding, setShowLanding] = useState(true);
   const [showExperience, setShowExperience] = useState(false);
 
-  const handleEnter = () => {
+  const handleEnter = useCallback(() => {
+    // Mount the experience first so the scroll container and Canvas are in the DOM
     setShowExperience(true);
-    // Delay hiding landing to allow smooth transition
-    setTimeout(() => {
-      setShowLanding(false);
-    }, 500);
-  };
+
+    // Give React a frame to render the scroll container + Canvas,
+    // then remove the landing screen so scroll events can reach the page
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setShowLanding(false);
+        // Ensure we're at the top and ScrollTrigger knows the new page height
+        window.scrollTo(0, 0);
+      });
+    });
+  }, []);
 
   return (
     <>

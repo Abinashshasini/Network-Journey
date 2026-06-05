@@ -2,54 +2,17 @@ import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Points, PointMaterial, Line } from '@react-three/drei';
 import * as THREE from 'three';
+import { getProgress } from '../stores/scrollStore';
 
-// Seeded random function for deterministic results
 function seededRandom(seed) {
   const x = Math.sin(seed) * 10000;
   return x - Math.floor(x);
 }
 
 /**
- * Animated floating particles throughout the scene
+ * Star field - always visible but fades in certain phases
  */
-function FloatingParticles({ count = 500, color = '#3b82f6' }) {
-  const pointsRef = useRef();
-
-  const particles = useMemo(() => {
-    const positions = new Float32Array(count * 3);
-    for (let i = 0; i < count; i++) {
-      positions[i * 3] = (seededRandom(i * 3 + 1) - 0.5) * 80 - 5;
-      positions[i * 3 + 1] = (seededRandom(i * 3 + 2) - 0.5) * 30;
-      positions[i * 3 + 2] = (seededRandom(i * 3 + 3) - 0.5) * 40 - 10;
-    }
-    return positions;
-  }, [count]);
-
-  useFrame((state) => {
-    if (!pointsRef.current) return;
-    const time = state.clock.elapsedTime * 0.1;
-    pointsRef.current.rotation.y = time * 0.05;
-    pointsRef.current.rotation.x = Math.sin(time * 0.2) * 0.02;
-  });
-
-  return (
-    <Points ref={pointsRef} positions={particles} stride={3}>
-      <PointMaterial
-        transparent
-        color={color}
-        size={0.08}
-        sizeAttenuation
-        depthWrite={false}
-        opacity={0.6}
-      />
-    </Points>
-  );
-}
-
-/**
- * Star field background
- */
-function StarField({ count = 1000 }) {
+function StarField({ count = 800 }) {
   const pointsRef = useRef();
 
   const stars = useMemo(() => {
@@ -68,6 +31,11 @@ function StarField({ count = 1000 }) {
   useFrame((state) => {
     if (!pointsRef.current) return;
     pointsRef.current.rotation.y = state.clock.elapsedTime * 0.01;
+    // Fade stars during browser rendering phase (lighter bg)
+    const p = getProgress();
+    const targetOpacity = p > 0.66 && p < 0.94 ? 0.3 : 0.8;
+    pointsRef.current.material.opacity +=
+      (targetOpacity - pointsRef.current.material.opacity) * 0.02;
   });
 
   return (
@@ -85,9 +53,75 @@ function StarField({ count = 1000 }) {
 }
 
 /**
- * Grid floor for depth perception
+ * Phase-aware floating particles - color shifts with environment
+ */
+function FloatingParticles({ count = 300, baseColor = '#60a5fa' }) {
+  const pointsRef = useRef();
+  const colorRef = useRef(new THREE.Color(baseColor));
+
+  const particles = useMemo(() => {
+    const positions = new Float32Array(count * 3);
+    for (let i = 0; i < count; i++) {
+      positions[i * 3] = (seededRandom(i * 3 + 1) - 0.5) * 80 - 5;
+      positions[i * 3 + 1] = (seededRandom(i * 3 + 2) - 0.5) * 30;
+      positions[i * 3 + 2] = (seededRandom(i * 3 + 3) - 0.5) * 40 - 10;
+    }
+    return positions;
+  }, [count]);
+
+  // Phase color targets
+  const phaseColors = useMemo(
+    () => [
+      { start: 0, color: new THREE.Color('#ffd4a0') },
+      { start: 0.12, color: new THREE.Color('#1e90ff') },
+      { start: 0.22, color: new THREE.Color('#a855f7') },
+      { start: 0.32, color: new THREE.Color('#22c55e') },
+      { start: 0.42, color: new THREE.Color('#ec4899') },
+      { start: 0.54, color: new THREE.Color('#f97316') },
+      { start: 0.66, color: new THREE.Color('#a5b4fc') },
+      { start: 0.94, color: new THREE.Color('#4ade80') },
+    ],
+    [],
+  );
+
+  useFrame((state) => {
+    if (!pointsRef.current) return;
+    const time = state.clock.elapsedTime * 0.1;
+    pointsRef.current.rotation.y = time * 0.05;
+    pointsRef.current.rotation.x = Math.sin(time * 0.2) * 0.02;
+
+    // Lerp particle color based on phase
+    const p = getProgress();
+    let targetColor = phaseColors[0].color;
+    for (let i = phaseColors.length - 1; i >= 0; i--) {
+      if (p >= phaseColors[i].start) {
+        targetColor = phaseColors[i].color;
+        break;
+      }
+    }
+    colorRef.current.lerp(targetColor, 0.02);
+    pointsRef.current.material.color.copy(colorRef.current);
+  });
+
+  return (
+    <Points ref={pointsRef} positions={particles} stride={3}>
+      <PointMaterial
+        transparent
+        color={baseColor}
+        size={0.08}
+        sizeAttenuation
+        depthWrite={false}
+        opacity={0.6}
+      />
+    </Points>
+  );
+}
+
+/**
+ * Grid floor - phase-aware color
  */
 function GridFloor() {
+  const gridRef = useRef();
   const gridLines = useMemo(() => {
     const lines = [];
     const size = 100;
@@ -95,15 +129,12 @@ function GridFloor() {
     const step = size / divisions;
     const halfSize = size / 2;
 
-    // Create grid lines
     for (let i = 0; i <= divisions; i++) {
       const pos = -halfSize + i * step;
-      // X-axis lines
       lines.push([
         [-halfSize - 10, -5, pos - 20],
         [halfSize + 30, -5, pos - 20],
       ]);
-      // Z-axis lines
       lines.push([
         [pos, -5, -halfSize - 20],
         [pos, -5, halfSize - 20],
@@ -113,7 +144,7 @@ function GridFloor() {
   }, []);
 
   return (
-    <group>
+    <group ref={gridRef}>
       {gridLines.map((points, i) => (
         <Line
           key={i}
@@ -129,14 +160,9 @@ function GridFloor() {
 }
 
 /**
- * Glowing orbs at key points
+ * Glowing orbs - phase-aware colors
  */
-function GlowingOrb({
-  position,
-  color = '#3b82f6',
-  size = 0.5,
-  pulseSpeed = 1,
-}) {
+function GlowingOrb({ position, color = '#3b82f6', size = 0.5, pulseSpeed = 1 }) {
   const meshRef = useRef();
   const lightRef = useRef();
 
@@ -167,7 +193,7 @@ function GlowingOrb({
 }
 
 /**
- * Data stream lines (animated dashes)
+ * Data stream lines
  */
 function DataStream({ start, end, color = '#60a5fa' }) {
   const lineRef = useRef();
@@ -198,15 +224,14 @@ function DataStream({ start, end, color = '#60a5fa' }) {
 }
 
 /**
- * Ambient data particles that flow through the scene
+ * Moving data particles
  */
-function DataParticles({ count = 100 }) {
+function DataParticles({ count = 80 }) {
   const pointsRef = useRef();
 
   const { particles, velocities } = useMemo(() => {
     const positions = new Float32Array(count * 3);
     const vels = [];
-
     for (let i = 0; i < count; i++) {
       positions[i * 3] = (seededRandom(i * 3 + 500) - 0.5) * 60;
       positions[i * 3 + 1] = seededRandom(i * 3 + 600) * 10 - 2;
@@ -219,7 +244,6 @@ function DataParticles({ count = 100 }) {
   useFrame(() => {
     if (!pointsRef.current) return;
     const positions = pointsRef.current.geometry.attributes.position.array;
-
     for (let i = 0; i < count; i++) {
       positions[i * 3] += velocities[i];
       if (positions[i * 3] > 50) {
@@ -284,58 +308,24 @@ function HexagonalNodes() {
 }
 
 /**
- * Main background elements component
+ * Main background elements - phase-aware
  */
 export default function BackgroundElements() {
   return (
     <group>
-      {/* Star field */}
       <StarField count={800} />
-
-      {/* Floating particles */}
-      <FloatingParticles count={300} color="#60a5fa" />
-      <FloatingParticles count={200} color="#a78bfa" />
-
-      {/* Ground grid */}
+      <FloatingParticles count={300} baseColor="#60a5fa" />
+      <FloatingParticles count={200} baseColor="#a78bfa" />
       <GridFloor />
-
-      {/* Moving data particles */}
       <DataParticles count={80} />
-
-      {/* Hexagonal background nodes */}
       <HexagonalNodes />
 
-      {/* Ambient glowing orbs */}
-      <GlowingOrb
-        position={[-20, 8, -15]}
-        color="#3b82f6"
-        size={0.8}
-        pulseSpeed={0.8}
-      />
-      <GlowingOrb
-        position={[10, 12, -20]}
-        color="#8b5cf6"
-        size={1}
-        pulseSpeed={1.2}
-      />
-      <GlowingOrb
-        position={[35, 6, -18]}
-        color="#22c55e"
-        size={0.6}
-        pulseSpeed={1.5}
-      />
-      <GlowingOrb
-        position={[-5, -3, -12]}
-        color="#06b6d4"
-        size={0.4}
-        pulseSpeed={2}
-      />
-      <GlowingOrb
-        position={[25, 10, -25]}
-        color="#f97316"
-        size={0.7}
-        pulseSpeed={0.6}
-      />
+      {/* Glowing orbs */}
+      <GlowingOrb position={[-20, 8, -15]} color="#3b82f6" size={0.8} pulseSpeed={0.8} />
+      <GlowingOrb position={[10, 12, -20]} color="#8b5cf6" size={1} pulseSpeed={1.2} />
+      <GlowingOrb position={[35, 6, -18]} color="#22c55e" size={0.6} pulseSpeed={1.5} />
+      <GlowingOrb position={[-5, -3, -12]} color="#06b6d4" size={0.4} pulseSpeed={2} />
+      <GlowingOrb position={[25, 10, -25]} color="#f97316" size={0.7} pulseSpeed={0.6} />
 
       {/* Data stream lines */}
       <DataStream start={[-25, 5, -10]} end={[40, 5, -10]} color="#3b82f6" />

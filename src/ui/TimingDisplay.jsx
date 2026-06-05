@@ -1,58 +1,43 @@
-import { useState, useEffect } from 'react';
+import { useScrollProgress } from '../stores/scrollStore';
 
 const timings = [
   { phase: 'network', label: 'Network Hop', time: 50, unit: 'ms' },
   { phase: 'arp', label: 'ARP Resolution', time: 2, unit: 'ms' },
-  { phase: 'nat', label: 'NAT Translation', time: 1, unit: 'μs' },
+  { phase: 'nat', label: 'NAT Translation', time: 1, unit: 'us' },
+  { phase: 'cable', label: 'Submarine Cable', time: 30, unit: 'ms' },
   { phase: 'dns', label: 'DNS Lookup', time: 35, unit: 'ms' },
   { phase: 'tcp', label: 'TCP Handshake', time: 45, unit: 'ms' },
   { phase: 'ssl', label: 'SSL/TLS', time: 100, unit: 'ms' },
   { phase: 'http', label: 'HTTP Request', time: 200, unit: 'ms' },
   { phase: 'render', label: 'Page Render', time: 75, unit: 'ms' },
+  { phase: 'complete', label: 'Complete!', time: 0, unit: 'ms' },
 ];
 
+const phaseBounds = [0, 0.10, 0.14, 0.18, 0.22, 0.32, 0.42, 0.54, 0.66, 0.94];
+
+function getPhaseInfo(scrollProgress) {
+  for (let i = phaseBounds.length - 1; i >= 0; i--) {
+    if (scrollProgress >= phaseBounds[i]) {
+      const nextBound = phaseBounds[i + 1] || 1;
+      const phaseProgress =
+        (scrollProgress - phaseBounds[i]) / (nextBound - phaseBounds[i]);
+      return {
+        index: Math.min(i, timings.length - 1),
+        progress: Math.min(phaseProgress, 1),
+      };
+    }
+  }
+  return { index: 0, progress: 0 };
+}
+
 export default function TimingDisplay() {
-  const [scrollProgress, setScrollProgress] = useState(0);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrollTop = window.scrollY;
-      const docHeight =
-        document.documentElement.scrollHeight - window.innerHeight;
-      setScrollProgress(docHeight > 0 ? scrollTop / docHeight : 0);
-    };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll();
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  const getPhaseInfo = () => {
-    if (scrollProgress < 0.08)
-      return { index: 0, progress: scrollProgress / 0.08 };
-    if (scrollProgress < 0.12)
-      return { index: 1, progress: (scrollProgress - 0.08) / 0.04 };
-    if (scrollProgress < 0.18)
-      return { index: 2, progress: (scrollProgress - 0.12) / 0.06 };
-    if (scrollProgress < 0.28)
-      return { index: 3, progress: (scrollProgress - 0.18) / 0.1 };
-    if (scrollProgress < 0.42)
-      return { index: 4, progress: (scrollProgress - 0.28) / 0.14 };
-    if (scrollProgress < 0.56)
-      return { index: 5, progress: (scrollProgress - 0.42) / 0.14 };
-    if (scrollProgress < 0.72)
-      return { index: 6, progress: (scrollProgress - 0.56) / 0.16 };
-    return { index: 7, progress: (scrollProgress - 0.72) / 0.28 };
-  };
-
-  const { index, progress } = getPhaseInfo();
+  const scrollProgress = useScrollProgress();
+  const { index, progress } = getPhaseInfo(scrollProgress);
   const currentTiming = timings[index];
 
-  // Calculate total elapsed time
   const getElapsedTime = () => {
     let total = 0;
-    for (let i = 0; i < index; i++) {
-      total += timings[i].time;
-    }
+    for (let i = 0; i < index; i++) total += timings[i].time;
     total += Math.floor(progress * currentTiming.time);
     return total;
   };
@@ -63,96 +48,60 @@ export default function TimingDisplay() {
         position: 'fixed',
         bottom: '20px',
         right: '20px',
-        background: 'rgba(15, 23, 42, 0.95)',
-        padding: '16px 20px',
+        background: 'rgba(6, 10, 20, 0.4)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+        padding: '14px 18px',
         borderRadius: '12px',
-        border: '1px solid #334155',
+        border: '1px solid rgba(255,255,255,0.06)',
         fontFamily: 'monospace',
         zIndex: 100,
-        minWidth: '180px',
-        backdropFilter: 'blur(10px)',
+        minWidth: '170px',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.35)',
       }}
     >
-      {/* Current phase */}
-      <div
-        style={{
-          color: '#64748b',
-          fontSize: '10px',
-          marginBottom: '4px',
-          textTransform: 'uppercase',
-          letterSpacing: '1px',
-        }}
-      >
+      <div style={{ color: '#475569', fontSize: '9px', marginBottom: '3px', textTransform: 'uppercase', letterSpacing: '1.2px' }}>
         Current Phase
       </div>
-      <div
-        style={{
-          color: '#e2e8f0',
-          fontSize: '14px',
-          fontWeight: 'bold',
-          marginBottom: '12px',
-        }}
-      >
+      <div style={{ color: '#cbd5e1', fontSize: '13px', fontWeight: 600, marginBottom: '12px' }}>
         {currentTiming.label}
       </div>
 
-      {/* Phase timing */}
       <div
         style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'baseline',
-          marginBottom: '8px',
-          padding: '8px 0',
-          borderTop: '1px solid #334155',
-          borderBottom: '1px solid #334155',
+          marginBottom: '10px',
+          padding: '7px 0',
+          borderTop: '1px solid rgba(255,255,255,0.06)',
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
         }}
       >
-        <span style={{ color: '#64748b', fontSize: '10px' }}>PHASE TIME</span>
-        <span
-          style={{ color: '#06b6d4', fontSize: '18px', fontWeight: 'bold' }}
-        >
+        <span style={{ color: '#475569', fontSize: '9px' }}>PHASE</span>
+        <span style={{ color: '#06b6d4', fontSize: '16px', fontWeight: 700 }}>
           {Math.floor(progress * currentTiming.time)}
-          <span style={{ fontSize: '12px', color: '#64748b' }}>
-            {' '}
-            / {currentTiming.time}
-            {currentTiming.unit}
+          <span style={{ fontSize: '11px', color: '#475569', fontWeight: 400 }}>
+            {' '}/ {currentTiming.time}{currentTiming.unit}
           </span>
         </span>
       </div>
 
-      {/* Total elapsed */}
-      <div style={{ color: '#64748b', fontSize: '10px', marginBottom: '4px' }}>
-        TOTAL ELAPSED
+      <div style={{ color: '#475569', fontSize: '9px', marginBottom: '3px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+        Total
       </div>
-      <div
-        style={{
-          color: '#22c55e',
-          fontSize: '28px',
-          fontWeight: 'bold',
-          textShadow: '0 0 10px rgba(34, 197, 94, 0.3)',
-        }}
-      >
+      <div style={{ color: '#22c55e', fontSize: '26px', fontWeight: 700 }}>
         {getElapsedTime()}
-        <span style={{ fontSize: '14px', color: '#64748b' }}>ms</span>
+        <span style={{ fontSize: '12px', color: '#475569', fontWeight: 400 }}>ms</span>
       </div>
 
-      {/* Progress bar for current phase */}
-      <div
-        style={{
-          marginTop: '12px',
-          height: '4px',
-          backgroundColor: '#1e293b',
-          borderRadius: '2px',
-          overflow: 'hidden',
-        }}
-      >
+      <div style={{ marginTop: '10px', height: '2px', background: 'rgba(255,255,255,0.06)', borderRadius: '1px', overflow: 'hidden' }}>
         <div
           style={{
             width: `${progress * 100}%`,
             height: '100%',
-            backgroundColor: '#22c55e',
-            transition: 'width 0.1s ease-out',
+            background: '#22c55e',
+            transition: 'width 0.1s linear',
           }}
         />
       </div>

@@ -310,10 +310,15 @@ export default function LandingScreen({ onEnter }) {
         // Show warp animation
         setShowWarp(true);
 
-        // After warp, transition to main experience
+        // Mount the experience early (during warp) so Canvas + ScrollTrigger
+        // have time to initialize while the warp animation plays
+        setTimeout(() => {
+          onEnter();
+        }, 500);
+
+        // After warp finishes, hide the landing overlay
         setTimeout(() => {
           setIsVisible(false);
-          onEnter();
         }, 4000);
       },
     });
@@ -407,7 +412,7 @@ export default function LandingScreen({ onEnter }) {
 
           <div className="feature-pills-container">
             {[
-              { icon: '🌐', text: 'DNS Lookup' },
+              { icon: '🌐', text: 'DNS Looku  p' },
               { icon: '🤝', text: 'TCP Handshake' },
               { icon: '🔒', text: 'SSL/TLS' },
               { icon: '📦', text: 'HTTP Request' },
