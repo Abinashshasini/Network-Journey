@@ -315,8 +315,8 @@ export default function AnimatedPackets() {
 
   return (
     <group>
-      {/* Main Request Packet */}
-      <TCPPacket ref={searchPacketRef} position={[-10, 0.5, 0]} color="#3b82f6" label="Request" />
+      {/* Main Request Packet — showData shows IP address billboard */}
+      <TCPPacket ref={searchPacketRef} position={[-10, 0.5, 0]} color="#3b82f6" label="Request" showData />
 
       {/* TCP Handshake Packets */}
       <HandshakePacket ref={synRef} position={[25, -5, 0]} color="#f97316" label="SYN" />

@@ -1,46 +1,42 @@
 import { useScrollProgress } from '../stores/scrollStore';
 
 const timings = [
-  { phase: 'network', label: 'Network Hop', time: 50, unit: 'ms' },
-  { phase: 'arp', label: 'ARP Resolution', time: 2, unit: 'ms' },
-  { phase: 'nat', label: 'NAT Translation', time: 1, unit: 'us' },
-  { phase: 'cable', label: 'Submarine Cable', time: 30, unit: 'ms' },
-  { phase: 'dns', label: 'DNS Lookup', time: 35, unit: 'ms' },
-  { phase: 'tcp', label: 'TCP Handshake', time: 45, unit: 'ms' },
-  { phase: 'ssl', label: 'SSL/TLS', time: 100, unit: 'ms' },
-  { phase: 'http', label: 'HTTP Request', time: 200, unit: 'ms' },
-  { phase: 'render', label: 'Page Render', time: 75, unit: 'ms' },
-  { phase: 'complete', label: 'Complete!', time: 0, unit: 'ms' },
+  { label: 'DNS Lookup',       time: 35,  unit: 'ms' },
+  { label: 'TCP Handshake',    time: 45,  unit: 'ms' },
+  { label: 'SSL/TLS',         time: 100, unit: 'ms' },
+  { label: 'HTTP Request',    time: 200, unit: 'ms' },
+  { label: 'Page Render',     time: 75,  unit: 'ms' },
 ];
 
-const phaseBounds = [0, 0.10, 0.14, 0.18, 0.22, 0.32, 0.42, 0.54, 0.66, 0.94];
+// Scroll progress at which each phase becomes "done"
+const PHASE_DONE_AT = [0.32, 0.42, 0.54, 0.66, 0.94];
+// Scroll progress at which each phase is "in progress" (started but not done)
+const PHASE_START_AT = [0.22, 0.32, 0.42, 0.54, 0.66];
 
-function getPhaseInfo(scrollProgress) {
-  for (let i = phaseBounds.length - 1; i >= 0; i--) {
-    if (scrollProgress >= phaseBounds[i]) {
-      const nextBound = phaseBounds[i + 1] || 1;
-      const phaseProgress =
-        (scrollProgress - phaseBounds[i]) / (nextBound - phaseBounds[i]);
-      return {
-        index: Math.min(i, timings.length - 1),
-        progress: Math.min(phaseProgress, 1),
-      };
-    }
-  }
-  return { index: 0, progress: 0 };
+function getPhaseProgress(scrollProgress, phaseIndex) {
+  const start = PHASE_START_AT[phaseIndex];
+  const done  = PHASE_DONE_AT[phaseIndex];
+  if (scrollProgress < start) return { status: 'pending', fraction: 0 };
+  if (scrollProgress >= done) return { status: 'done',    fraction: 1 };
+  return {
+    status: 'active',
+    fraction: (scrollProgress - start) / (done - start),
+  };
 }
+
+const STATUS_ICON  = { done: '✓', active: '●', pending: '○' };
+const STATUS_COLOR = { done: '#22c55e', active: '#06b6d4', pending: '#334155' };
 
 export default function TimingDisplay() {
   const scrollProgress = useScrollProgress();
-  const { index, progress } = getPhaseInfo(scrollProgress);
-  const currentTiming = timings[index];
 
-  const getElapsedTime = () => {
-    let total = 0;
-    for (let i = 0; i < index; i++) total += timings[i].time;
-    total += Math.floor(progress * currentTiming.time);
-    return total;
-  };
+  // Total elapsed = sum of all completed phases' full times + in-progress fraction
+  let totalMs = 0;
+  timings.forEach((t, i) => {
+    const { status, fraction } = getPhaseProgress(scrollProgress, i);
+    if (status === 'done')   totalMs += t.time;
+    if (status === 'active') totalMs += Math.floor(fraction * t.time);
+  });
 
   return (
     <div
@@ -48,62 +44,69 @@ export default function TimingDisplay() {
         position: 'fixed',
         bottom: '20px',
         right: '20px',
-        background: 'rgba(6, 10, 20, 0.4)',
-        backdropFilter: 'blur(16px)',
-        WebkitBackdropFilter: 'blur(16px)',
-        padding: '14px 18px',
-        borderRadius: '12px',
-        border: '1px solid rgba(255,255,255,0.06)',
-        fontFamily: 'monospace',
+        background: 'rgba(6, 10, 20, 0.5)',
+        backdropFilter: 'blur(18px)',
+        WebkitBackdropFilter: 'blur(18px)',
+        padding: '16px 20px',
+        borderRadius: '14px',
+        border: '1px solid rgba(255,255,255,0.07)',
+        fontFamily: '"SF Mono", ui-monospace, monospace',
         zIndex: 100,
-        minWidth: '170px',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.35)',
+        minWidth: '220px',
+        boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
       }}
     >
-      <div style={{ color: '#475569', fontSize: '9px', marginBottom: '3px', textTransform: 'uppercase', letterSpacing: '1.2px' }}>
-        Current Phase
-      </div>
-      <div style={{ color: '#cbd5e1', fontSize: '13px', fontWeight: 600, marginBottom: '12px' }}>
-        {currentTiming.label}
-      </div>
-
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'baseline',
-          marginBottom: '10px',
-          padding: '7px 0',
-          borderTop: '1px solid rgba(255,255,255,0.06)',
-          borderBottom: '1px solid rgba(255,255,255,0.06)',
-        }}
-      >
-        <span style={{ color: '#475569', fontSize: '9px' }}>PHASE</span>
-        <span style={{ color: '#06b6d4', fontSize: '16px', fontWeight: 700 }}>
-          {Math.floor(progress * currentTiming.time)}
-          <span style={{ fontSize: '11px', color: '#475569', fontWeight: 400 }}>
-            {' '}/ {currentTiming.time}{currentTiming.unit}
-          </span>
-        </span>
+      {/* Total */}
+      <div style={{ marginBottom: '12px', paddingBottom: '10px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+        <div style={{ fontSize: '9px', color: '#475569', textTransform: 'uppercase', letterSpacing: '1.2px', marginBottom: '3px' }}>
+          ⏱ Total Latency
+        </div>
+        <div style={{ fontSize: '26px', fontWeight: 700, color: '#f1f5f9', lineHeight: 1 }}>
+          {totalMs}
+          <span style={{ fontSize: '13px', color: '#475569', fontWeight: 400 }}>ms</span>
+        </div>
       </div>
 
-      <div style={{ color: '#475569', fontSize: '9px', marginBottom: '3px', textTransform: 'uppercase', letterSpacing: '1px' }}>
-        Total
-      </div>
-      <div style={{ color: '#22c55e', fontSize: '26px', fontWeight: 700 }}>
-        {getElapsedTime()}
-        <span style={{ fontSize: '12px', color: '#475569', fontWeight: 400 }}>ms</span>
-      </div>
+      {/* Checklist */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
+        {timings.map((phase, i) => {
+          const { status, fraction } = getPhaseProgress(scrollProgress, i);
+          const icon  = STATUS_ICON[status];
+          const color = STATUS_COLOR[status];
 
-      <div style={{ marginTop: '10px', height: '2px', background: 'rgba(255,255,255,0.06)', borderRadius: '1px', overflow: 'hidden' }}>
-        <div
-          style={{
-            width: `${progress * 100}%`,
-            height: '100%',
-            background: '#22c55e',
-            transition: 'width 0.1s linear',
-          }}
-        />
+          return (
+            <div
+              key={i}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                opacity: status === 'pending' ? 0.4 : 1,
+                transition: 'opacity 0.4s ease',
+              }}
+            >
+              {/* Status icon */}
+              <span style={{ color, fontSize: '12px', width: '12px', flexShrink: 0, textShadow: status === 'done' ? '0 0 8px #22c55e60' : 'none' }}>
+                {icon}
+              </span>
+
+              {/* Phase name */}
+              <span style={{ color: status === 'pending' ? '#475569' : '#94a3b8', fontSize: '11px', flex: 1 }}>
+                {phase.label}
+              </span>
+
+              {/* Time value */}
+              <span style={{ color, fontSize: '11px', fontWeight: 600, minWidth: '52px', textAlign: 'right' }}>
+                {status === 'pending'
+                  ? '---'
+                  : status === 'done'
+                    ? `${phase.time}${phase.unit}`
+                    : `${Math.floor(fraction * phase.time)}/${phase.time}${phase.unit}`
+                }
+              </span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

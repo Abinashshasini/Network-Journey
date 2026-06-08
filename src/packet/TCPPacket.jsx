@@ -2,7 +2,12 @@ import { useRef, forwardRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Text, Trail } from '@react-three/drei';
 
-const TCPPacket = forwardRef(({ position, color = '#3b82f6', label }, ref) => {
+/**
+ * showData — when true, shows the source→destination IP and port as a small
+ * floating billboard. Used on the main search packet so viewers understand
+ * a packet carries real addressing information, not just colour.
+ */
+const TCPPacket = forwardRef(({ position, color = '#3b82f6', label, showData = false }, ref) => {
   const meshRef = useRef();
 
   useFrame((state) => {
@@ -26,9 +31,26 @@ const TCPPacket = forwardRef(({ position, color = '#3b82f6', label }, ref) => {
         </mesh>
       </Trail>
 
+      {/* Packet label (SYN / ACK / etc.) */}
       <Text position={[0, 0.7, 0]} fontSize={0.2} color="#ffffff" anchorX="center">
         {label}
       </Text>
+
+      {/* IP address billboard — only on the main request packet */}
+      {showData && (
+        <Text
+          position={[0, -0.65, 0]}
+          fontSize={0.13}
+          color="#64748b"
+          anchorX="center"
+          anchorY="middle"
+          lineHeight={1.4}
+          outlineWidth={0.008}
+          outlineColor="#0f172a"
+        >
+          {`192.168.1.5 → 142.250.190.14\nPort: 443`}
+        </Text>
+      )}
     </group>
   );
 });
