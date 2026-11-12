@@ -2,16 +2,18 @@ import { useRef, useEffect, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Text, Line } from '@react-three/drei';
 import * as THREE from 'three';
-import { subscribe } from '../stores/scrollStore';
+import { subscribe } from '../stores/player';
+import { accent } from '../theme/materials';
+import { useTheme, LAYER } from '../theme/tokens';
 
 const DNS_ACTIVE_START = 0.22;
 const DNS_ACTIVE_END = 0.34;
 
 const nodes = [
-  { id: 'recursive', label: 'Recursive\nResolver',  color: '#06b6d4', pos: [-1,  2.2, 0] },
-  { id: 'root',      label: 'Root DNS\nServer',      color: '#f87171', pos: [ 0,  4.5, 0] },
-  { id: 'tld',       label: '.com TLD\nServer',      color: '#fb923c', pos: [ 2,  3.0, 0] },
-  { id: 'auth',      label: 'Authoritative\ngoogle.com', color: '#4ade80', pos: [ 1,  1.0, 0] },
+  { id: 'recursive', label: 'Recursive\nResolver',  color: LAYER.application, pos: [-1,  2.2, 0] },
+  { id: 'root',      label: 'Root DNS\nServer',      color: LAYER.application, pos: [ 0,  4.5, 0] },
+  { id: 'tld',       label: '.com TLD\nServer',      color: LAYER.application, pos: [ 2,  3.0, 0] },
+  { id: 'auth',      label: 'Authoritative\ngoogle.com', color: LAYER.application, pos: [ 1,  1.0, 0] },
 ];
 
 // Edges: recursive→root→tld→auth→recursive (query path)
@@ -23,6 +25,7 @@ const edges = [
 ];
 
 function DNSNodeMesh({ pos, color, label, pulseOffset = 0 }) {
+  const theme = useTheme();
   const meshRef = useRef();
   const glowRef = useRef();
 
@@ -44,15 +47,14 @@ function DNSNodeMesh({ pos, color, label, pulseOffset = 0 }) {
         <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.3} transparent opacity={0.25} />
       </mesh>
       {/* Core sphere */}
-      <mesh ref={meshRef}>
+      <mesh ref={meshRef} material={accent('application')}>
         <sphereGeometry args={[0.22, 16, 16]} />
-        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.8} roughness={0.2} />
       </mesh>
       {/* Label */}
       <Text
         position={[0.55, 0, 0]}
         fontSize={0.18}
-        color={color}
+        color={theme.text}
         anchorX="left"
         anchorY="middle"
         lineHeight={1.3}
@@ -113,7 +115,7 @@ export default function DNSNodes({ position = [0, 0, 0] }) {
       <Text
         position={[0.5, 5.5, 0]}
         fontSize={0.22}
-        color="#8b5cf6"
+        color={LAYER.application}
         anchorX="center"
         fontWeight="bold"
       >

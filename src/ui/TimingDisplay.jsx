@@ -1,113 +1,53 @@
-import { useScrollProgress } from '../stores/scrollStore';
+import { useProgressSelector } from '../stores/player';
+import { layerColor, useTheme } from '../theme/tokens';
 
 const timings = [
-  { label: 'DNS Lookup',       time: 35,  unit: 'ms' },
-  { label: 'TCP Handshake',    time: 45,  unit: 'ms' },
-  { label: 'SSL/TLS',         time: 100, unit: 'ms' },
-  { label: 'HTTP Request',    time: 200, unit: 'ms' },
-  { label: 'Page Render',     time: 75,  unit: 'ms' },
+  { label: 'DNS lookup', time: 35, layer: 'application', start: 0.22, done: 0.32 },
+  { label: 'TCP handshake', time: 45, layer: 'transport', start: 0.32, done: 0.42 },
+  { label: 'TLS handshake', time: 100, layer: 'security', start: 0.42, done: 0.54 },
+  { label: 'HTTP request', time: 200, layer: 'application', start: 0.54, done: 0.66 },
+  { label: 'Page render', time: 75, layer: 'browser', start: 0.66, done: 0.94 },
 ];
 
-// Scroll progress at which each phase becomes "done"
-const PHASE_DONE_AT = [0.32, 0.42, 0.54, 0.66, 0.94];
-// Scroll progress at which each phase is "in progress" (started but not done)
-const PHASE_START_AT = [0.22, 0.32, 0.42, 0.54, 0.66];
-
-function getPhaseProgress(scrollProgress, phaseIndex) {
-  const start = PHASE_START_AT[phaseIndex];
-  const done  = PHASE_DONE_AT[phaseIndex];
-  if (scrollProgress < start) return { status: 'pending', fraction: 0 };
-  if (scrollProgress >= done) return { status: 'done',    fraction: 1 };
-  return {
-    status: 'active',
-    fraction: (scrollProgress - start) / (done - start),
-  };
+function phase(p, t) {
+  if (p < t.start) return { status: 'pending', ms: 0 };
+  if (p >= t.done) return { status: 'done', ms: t.time };
+  return { status: 'active', ms: Math.floor(((p - t.start) / (t.done - t.start)) * t.time) };
 }
 
-const STATUS_ICON  = { done: '✓', active: '●', pending: '○' };
-const STATUS_COLOR = { done: '#22c55e', active: '#06b6d4', pending: '#334155' };
+// Quantised to whole milliseconds so we re-render only when a number changes
+const selectMs = (p) => timings.map((t) => phase(p, t).ms).join(',');
 
 export default function TimingDisplay() {
-  const scrollProgress = useScrollProgress();
-
-  // Total elapsed = sum of all completed phases' full times + in-progress fraction
-  let totalMs = 0;
-  timings.forEach((t, i) => {
-    const { status, fraction } = getPhaseProgress(scrollProgress, i);
-    if (status === 'done')   totalMs += t.time;
-    if (status === 'active') totalMs += Math.floor(fraction * t.time);
-  });
+  const theme = useTheme();
+  const key = useProgressSelector(selectMs);
+  const ms = key.split(',').map(Number);
+  const total = ms.reduce((a, b) => a + b, 0);
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        bottom: '20px',
-        right: '20px',
-        background: 'rgba(6, 10, 20, 0.5)',
-        backdropFilter: 'blur(18px)',
-        WebkitBackdropFilter: 'blur(18px)',
-        padding: '16px 20px',
-        borderRadius: '14px',
-        border: '1px solid rgba(255,255,255,0.07)',
-        fontFamily: '"SF Mono", ui-monospace, monospace',
-        zIndex: 100,
-        minWidth: '220px',
-        boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
-      }}
-    >
-      {/* Total */}
-      <div style={{ marginBottom: '12px', paddingBottom: '10px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-        <div style={{ fontSize: '9px', color: '#475569', textTransform: 'uppercase', letterSpacing: '1.2px', marginBottom: '3px' }}>
-          ⏱ Total Latency
-        </div>
-        <div style={{ fontSize: '26px', fontWeight: 700, color: '#f1f5f9', lineHeight: 1 }}>
-          {totalMs}
-          <span style={{ fontSize: '13px', color: '#475569', fontWeight: 400 }}>ms</span>
-        </div>
+    <div className="latency">
+      <div className="latency__head">
+        <span className="label">Total latency</span>
+        <span className="latency__total">
+          {total}
+          <small>ms</small>
+        </span>
       </div>
-
-      {/* Checklist */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
-        {timings.map((phase, i) => {
-          const { status, fraction } = getPhaseProgress(scrollProgress, i);
-          const icon  = STATUS_ICON[status];
-          const color = STATUS_COLOR[status];
-
+      <ul>
+        {timings.map((t, i) => {
+          const status = ms[i] === 0 ? 'pending' : ms[i] >= t.time ? 'done' : 'active';
           return (
-            <div
-              key={i}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                opacity: status === 'pending' ? 0.4 : 1,
-                transition: 'opacity 0.4s ease',
-              }}
-            >
-              {/* Status icon */}
-              <span style={{ color, fontSize: '12px', width: '12px', flexShrink: 0, textShadow: status === 'done' ? '0 0 8px #22c55e60' : 'none' }}>
-                {icon}
+            <li key={t.label} className={`is-${status}`} style={{ '--accent': layerColor(t.layer, theme) }}>
+              <i />
+              <span className="latency__label">{t.label}</span>
+              <span className="latency__ms">
+                {status === 'pending' ? '—' : status === 'done' ? `${t.time}ms` : `${ms[i]}ms`}
               </span>
-
-              {/* Phase name */}
-              <span style={{ color: status === 'pending' ? '#475569' : '#94a3b8', fontSize: '11px', flex: 1 }}>
-                {phase.label}
-              </span>
-
-              {/* Time value */}
-              <span style={{ color, fontSize: '11px', fontWeight: 600, minWidth: '52px', textAlign: 'right' }}>
-                {status === 'pending'
-                  ? '---'
-                  : status === 'done'
-                    ? `${phase.time}${phase.unit}`
-                    : `${Math.floor(fraction * phase.time)}/${phase.time}${phase.unit}`
-                }
-              </span>
-            </div>
+              <span className="latency__bar" style={{ transform: `scaleX(${ms[i] / t.time})` }} />
+            </li>
           );
         })}
-      </div>
+      </ul>
     </div>
   );
 }

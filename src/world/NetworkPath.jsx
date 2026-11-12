@@ -2,7 +2,8 @@ import { Text, Line } from '@react-three/drei';
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { getProgress } from '../stores/scrollStore';
+import { getProgress } from '../stores/player';
+import { useTheme, LAYER } from '../theme/tokens';
 
 import Laptop from './Laptop';
 import Router from './Router';
@@ -23,7 +24,8 @@ import { LoadBalancer, ServerFarm } from './LoadBalancerVisualization';
  * Animated connection line — dashes flow continuously, faster when data is
  * actively passing through this segment (activeRange = [startProgress, endProgress]).
  */
-function ConnectionLine({ start, end, color = '#94a3b8', activeRange = [0, 0] }) {
+function ConnectionLine({ start, end, color, activeRange = [0, 0] }) {
+  const theme = useTheme();
   const lineRef = useRef();
 
   const points = useMemo(
@@ -45,7 +47,7 @@ function ConnectionLine({ start, end, color = '#94a3b8', activeRange = [0, 0] })
     <Line
       ref={lineRef}
       points={points}
-      color={color}
+      color={color ?? theme.lineMuted}
       lineWidth={1.5}
       dashed
       dashSize={0.2}
@@ -85,31 +87,31 @@ export default function NetworkPath() {
       {/* ── CONNECTIONS (each knows its active scroll range) ─── */}
       <ConnectionLine
         start={[-10, 0.5, 0]} end={[-7.5, 0.5, 0]}
-        color="#22c55e" activeRange={[0.00, 0.12]}
+        color={LAYER.link} activeRange={[0.00, 0.12]}
       />
       <ConnectionLine
         start={[-4.5, 0, 0]} end={[-1.5, 0, 0]}
-        color="#3b82f6" activeRange={[0.10, 0.20]}
+        color={LAYER.network} activeRange={[0.10, 0.20]}
       />
       <ConnectionLine
         start={[1.5, 0, 0]} end={[4, -1, 0]}
-        color="#f97316" activeRange={[0.12, 0.22]}
+        color={LAYER.network} activeRange={[0.12, 0.22]}
       />
       <ConnectionLine
         start={[18, -1, 0]} end={[20.5, 0, 0]}
-        color="#8b5cf6" activeRange={[0.20, 0.30]}
+        color={LAYER.application} activeRange={[0.20, 0.30]}
       />
       <ConnectionLine
         start={[23.5, 0, 0]} end={[29, 0, 0]}
-        color="#ec4899" activeRange={[0.30, 0.66]}
+        color={LAYER.transport} activeRange={[0.30, 0.66]}
       />
 
       {/* ── PATH LABELS ───────────────────────────── */}
-      <Text position={[-9, 2, 0]}    fontSize={0.2} color="#16a34a" anchorX="center">WiFi</Text>
-      <Text position={[-3, 2, 0]}    fontSize={0.2} color="#2563eb" anchorX="center">Fiber</Text>
-      <Text position={[2.5, 1.5, 0]} fontSize={0.2} color="#ea580c" anchorX="center">Backbone</Text>
-      <Text position={[19.5, 1.5, 0]} fontSize={0.2} color="#7c3aed" anchorX="center">DNS Query</Text>
-      <Text position={[26, 2, 0]}    fontSize={0.2} color="#db2777" anchorX="center">TCP/SSL</Text>
+      <Text position={[-9, 2, 0]}    fontSize={0.2} color={LAYER.link} anchorX="center">WiFi</Text>
+      <Text position={[-3, 2, 0]}    fontSize={0.2} color={LAYER.network} anchorX="center">Fiber</Text>
+      <Text position={[2.5, 1.5, 0]} fontSize={0.2} color={LAYER.network} anchorX="center">Backbone</Text>
+      <Text position={[19.5, 1.5, 0]} fontSize={0.2} color={LAYER.application} anchorX="center">DNS Query</Text>
+      <Text position={[26, 2, 0]}    fontSize={0.2} color={LAYER.transport} anchorX="center">TCP/SSL</Text>
 
       {/* ── HANDSHAKE INDICATORS ──────────────────── */}
       <TCPHandshakeIndicator position={[28, 4.5, -2]} />

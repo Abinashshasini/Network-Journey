@@ -1,76 +1,55 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect } from 'react';
+import {
+  togglePlay,
+  nextStep,
+  prevStep,
+  restart,
+  cycleSpeed,
+  goToChapter,
+} from '../stores/player';
+import { toggleTheme } from '../theme/tokens';
 
-const phases = [
-  { key: '1', scroll: 0, name: 'Start - Laptop' },
-  { key: '2', scroll: 0.08, name: 'ARP Resolution' },
-  { key: '3', scroll: 0.13, name: 'NAT Translation' },
-  { key: '4', scroll: 0.18, name: 'Submarine Cable' },
-  { key: '5', scroll: 0.25, name: 'DNS Lookup' },
-  { key: '6', scroll: 0.36, name: 'TCP Handshake' },
-  { key: '7', scroll: 0.46, name: 'SSL/TLS Handshake' },
-  { key: '8', scroll: 0.58, name: 'HTTP Request/Response' },
-  { key: '9', scroll: 0.72, name: 'Browser Rendering' },
-  { key: '0', scroll: 1, name: 'Complete' },
-];
-
+/**
+ * Keyboard controls
+ *   Space / K      play · pause
+ *   → / L / J ←    next · previous step
+ *   1 – 8          jump to chapter
+ *   + / −          speed
+ *   R              replay
+ *   T              theme
+ */
 export default function useKeyboardNav() {
-  const scrollToPhase = useCallback((phaseScroll) => {
-    const docHeight =
-      document.documentElement.scrollHeight - window.innerHeight;
-    window.scrollTo({
-      top: phaseScroll * docHeight,
-      behavior: 'smooth',
-    });
-  }, []);
-
   useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')
-        return;
+    const onKey = (e) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const tag = e.target.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      // Let focused buttons handle Space/Enter themselves
+      if (tag === 'BUTTON' && (e.key === ' ' || e.key === 'Enter')) return;
 
-      const phase = phases.find((p) => p.key === e.key);
-      if (phase) {
-        scrollToPhase(phase.scroll);
-        return;
-      }
-
-      if (e.key === 'ArrowDown' || e.key === 'j') {
+      const k = e.key;
+      if (k === ' ' || k === 'k' || k === 'K') {
         e.preventDefault();
-        window.scrollBy({ top: 300, behavior: 'smooth' });
-      }
-      if (e.key === 'ArrowUp' || e.key === 'k') {
+        togglePlay();
+      } else if (k === 'ArrowRight' || k === 'l' || k === 'L') {
         e.preventDefault();
-        window.scrollBy({ top: -300, behavior: 'smooth' });
-      }
-
-      if (e.key === 'PageDown' || e.key === ' ') {
+        nextStep();
+      } else if (k === 'ArrowLeft' || k === 'j' || k === 'J') {
         e.preventDefault();
-        window.scrollBy({ top: window.innerHeight * 0.8, behavior: 'smooth' });
-      }
-      if (e.key === 'PageUp') {
-        e.preventDefault();
-        window.scrollBy({
-          top: -window.innerHeight * 0.8,
-          behavior: 'smooth',
-        });
-      }
-
-      if (e.key === 'Home') {
-        e.preventDefault();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
-      if (e.key === 'End') {
-        e.preventDefault();
-        window.scrollTo({
-          top: document.documentElement.scrollHeight,
-          behavior: 'smooth',
-        });
+        prevStep();
+      } else if (k === '+' || k === '=') {
+        cycleSpeed(1);
+      } else if (k === '-' || k === '_') {
+        cycleSpeed(-1);
+      } else if (k === 'r' || k === 'R') {
+        restart();
+      } else if (k === 't' || k === 'T') {
+        toggleTheme();
+      } else if (/^[1-8]$/.test(k)) {
+        goToChapter(Number(k) - 1);
       }
     };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [scrollToPhase]);
-
-  return { phases, scrollToPhase };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 }

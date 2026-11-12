@@ -2,8 +2,11 @@ import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Text, Line } from '@react-three/drei';
 import * as THREE from 'three';
+import { MONO } from '../theme/materials';
+import { useTheme, LAYER } from '../theme/tokens';
 
 function WaterSurface({ centerX = 11 }) {
+  const theme = useTheme();
   const ref = useRef();
 
   useFrame((state) => {
@@ -17,17 +20,17 @@ function WaterSurface({ centerX = 11 }) {
     <mesh ref={ref} position={[centerX, -2, 0]} rotation={[-Math.PI / 2, 0, 0]}>
       <planeGeometry args={[18, 8]} />
       <meshStandardMaterial
-        color="#0c2340"
+        color={theme.panel}
         transparent
         opacity={0.5}
-        emissive="#0a3060"
-        emissiveIntensity={0.08}
+        roughness={0.9}
+        depthWrite={false}
       />
     </mesh>
   );
 }
 
-function Cable({ start, end, color = '#f97316' }) {
+function Cable({ start, end, color }) {
   const points = useMemo(() => {
     const curve = new THREE.CatmullRomCurve3([
       new THREE.Vector3(...start),
@@ -71,23 +74,25 @@ function SignalPulse({ start, end }) {
     meshRef.current.position.copy(pt);
     // Pulse the glow
     meshRef.current.material.emissiveIntensity =
-      0.8 + Math.sin(state.clock.elapsedTime * 8) * 0.4;
+      1.6 + Math.sin(state.clock.elapsedTime * 8) * 0.4;
   });
 
   return (
     <mesh ref={meshRef}>
       <sphereGeometry args={[0.1, 8, 8]} />
       <meshStandardMaterial
-        color="#f97316"
-        emissive="#f97316"
-        emissiveIntensity={0.8}
-        roughness={0.1}
+        color={LAYER.network}
+        emissive={LAYER.network}
+        emissiveIntensity={1.6}
+        roughness={0.4}
+        toneMapped={false}
       />
     </mesh>
   );
 }
 
 function Bubbles({ centerX = 11 }) {
+  const theme = useTheme();
   const bubblesRef = useRef();
 
   const positions = useMemo(() => {
@@ -120,7 +125,7 @@ function Bubbles({ centerX = 11 }) {
           itemSize={3}
         />
       </bufferGeometry>
-      <pointsMaterial color="#60a5fa" size={0.07} transparent opacity={0.5} sizeAttenuation depthWrite={false} />
+      <pointsMaterial color={theme.textMuted} size={0.07} transparent opacity={0.4} sizeAttenuation depthWrite={false} />
     </points>
   );
 }
@@ -129,6 +134,7 @@ export default function SubmarineCable({
   startPos = [4, -1, 0],
   endPos   = [18, -1, 0],
 }) {
+  const theme = useTheme();
   const centerX = (startPos[0] + endPos[0]) / 2;
 
   return (
@@ -137,19 +143,18 @@ export default function SubmarineCable({
       <WaterSurface centerX={centerX} />
 
       {/* Deep ocean floor gradient */}
-      <mesh position={[centerX, -4.5, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <mesh position={[centerX, -4.5, 0]} rotation={[-Math.PI / 2, 0, 0]} material={MONO.body}>
         <planeGeometry args={[18, 6]} />
-        <meshStandardMaterial color="#060d1a" />
       </mesh>
 
       {/* Mid-depth dark water volume */}
       <mesh position={[centerX, -3.2, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[18, 6]} />
-        <meshStandardMaterial color="#0a1a30" transparent opacity={0.6} depthWrite={false} />
+        <meshStandardMaterial color={theme.body} transparent opacity={0.6} depthWrite={false} roughness={0.9} />
       </mesh>
 
       {/* Submarine cable */}
-      <Cable start={startPos} end={endPos} color="#f97316" />
+      <Cable start={startPos} end={endPos} color={theme.lineMuted} />
 
       {/* Signal pulse traveling along the fiber */}
       <SignalPulse start={startPos} end={endPos} />
@@ -158,25 +163,23 @@ export default function SubmarineCable({
       <Bubbles centerX={centerX} />
 
       {/* Cable anchors */}
-      <mesh position={[startPos[0], startPos[1] - 0.5, startPos[2]]}>
+      <mesh position={[startPos[0], startPos[1] - 0.5, startPos[2]]} material={MONO.panel}>
         <cylinderGeometry args={[0.2, 0.3, 0.5]} />
-        <meshStandardMaterial color="#4b5563" />
       </mesh>
-      <mesh position={[endPos[0], endPos[1] - 0.5, endPos[2]]}>
+      <mesh position={[endPos[0], endPos[1] - 0.5, endPos[2]]} material={MONO.panel}>
         <cylinderGeometry args={[0.2, 0.3, 0.5]} />
-        <meshStandardMaterial color="#4b5563" />
       </mesh>
 
       {/* Scale context — the most important label in the whole scene */}
-      <Text position={[centerX, 0.8, 0]} fontSize={0.3} color="#94a3b8" anchorX="center" fontWeight="bold">
+      <Text position={[centerX, 0.8, 0]} fontSize={0.3} color={theme.text} anchorX="center" fontWeight="bold">
         Pacific Ocean
       </Text>
-      <Text position={[centerX, 0.3, 0]} fontSize={0.2} color="#64748b" anchorX="center">
-        ~9,000 km · 45ms latency · 200,000 km/s in fiber
+      <Text position={[centerX, 0.3, 0]} fontSize={0.2} color={theme.textMuted} anchorX="center">
+        ~9,000 km | 45ms latency | 200,000 km/s in fiber
       </Text>
 
       {/* Existing depth label */}
-      <Text position={[centerX, -4, 0]} fontSize={0.25} color="#1e3a5f" anchorX="center">
+      <Text position={[centerX, -4, 0]} fontSize={0.25} color={theme.textMuted} anchorX="center">
         Submarine Fiber Optic Cable
       </Text>
     </group>

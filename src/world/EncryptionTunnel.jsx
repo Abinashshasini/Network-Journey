@@ -1,7 +1,8 @@
 import { useRef, useMemo, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { subscribe } from '../stores/scrollStore';
+import { subscribe } from '../stores/player';
+import { LAYER } from '../theme/tokens';
 
 // The tunnel stretches between the client-side handshake area and the server.
 // These match the SSL packet positions in AnimatedPackets.jsx:
@@ -69,8 +70,8 @@ export default function EncryptionTunnel() {
       {/* Outer soft glow */}
       <mesh ref={glowRef} geometry={glowGeo}>
         <meshStandardMaterial
-          color="#22c55e"
-          emissive="#22c55e"
+          color={LAYER.security}
+          emissive={LAYER.security}
           emissiveIntensity={0.2}
           transparent
           opacity={0}
@@ -82,8 +83,8 @@ export default function EncryptionTunnel() {
       {/* Inner tunnel surface */}
       <mesh ref={meshRef} geometry={tubeGeo}>
         <meshStandardMaterial
-          color="#22c55e"
-          emissive="#22c55e"
+          color={LAYER.security}
+          emissive={LAYER.security}
           emissiveIntensity={0.4}
           transparent
           opacity={0}

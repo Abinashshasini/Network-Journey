@@ -1,9 +1,12 @@
 import { useRef, forwardRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Text, Trail } from '@react-three/drei';
+import { MONO, accent } from '../theme/materials';
+import { useTheme, LAYER } from '../theme/tokens';
 
 const SSLPacket = forwardRef(
-  ({ position, color = '#22c55e', label, isLock = false, size = 0.3 }, ref) => {
+  ({ position, color = LAYER.security, label, isLock = false, size = 0.3 }, ref) => {
+    const theme = useTheme();
     const meshRef = useRef();
 
     useFrame((state) => {
@@ -23,43 +26,21 @@ const SSLPacket = forwardRef(
             {isLock ? (
               <group>
                 {/* Lock body */}
-                <mesh position={[0, -0.1, 0]}>
+                <mesh position={[0, -0.1, 0]} material={accent('security')}>
                   <boxGeometry args={[size * 1.8, size * 1.2, size]} />
-                  <meshStandardMaterial
-                    color="#22c55e"
-                    emissive="#22c55e"
-                    emissiveIntensity={0.5}
-                    roughness={0.2}
-                    metalness={0.3}
-                  />
                 </mesh>
                 {/* Shackle */}
-                <mesh position={[0, 0.4, 0]}>
+                <mesh position={[0, 0.4, 0]} material={accent('security', 1.4)}>
                   <torusGeometry args={[size * 0.5, size * 0.15, 8, 16, Math.PI]} />
-                  <meshStandardMaterial
-                    color="#22c55e"
-                    emissive="#22c55e"
-                    emissiveIntensity={0.4}
-                    roughness={0.2}
-                    metalness={0.4}
-                  />
                 </mesh>
               </group>
             ) : (
               <group>
-                <mesh>
+                <mesh material={accent(color)}>
                   <boxGeometry args={[size * 2, size * 1.2, size * 1.5]} />
-                  <meshStandardMaterial
-                    color={color}
-                    emissive={color}
-                    emissiveIntensity={0.4}
-                    roughness={0.3}
-                    metalness={0.2}
-                  />
                 </mesh>
-                <mesh position={[0, 0, size * 0.76]}>
+                <mesh position={[0, 0, size * 0.76]} material={MONO.screen}>
                   <boxGeometry args={[size * 1.8, size * 0.2, 0.02]} />
-                  <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={0.3} />
                 </mesh>
               </group>
             )}
@@ -69,7 +50,7 @@ const SSLPacket = forwardRef(
         <Text
           position={[0, size * 1.5 + 0.3, 0]}
           fontSize={0.16}
-          color="#ffffff"
+          color={theme.text}
           anchorX="center"
         >
           {label}

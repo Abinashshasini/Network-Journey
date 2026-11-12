@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect } from 'react';
 import gsap from 'gsap';
-import ScrollTrigger from 'gsap/ScrollTrigger';
+import { registerTimeline } from '../stores/player';
+import { LAYER } from '../theme/tokens';
 
 import TCPPacket from '../packet/TCPPacket';
 import HandshakePacket from '../packet/HandshakePacket';
@@ -17,8 +18,6 @@ import {
   NetworkWaterfall,
   GPURenderingPipeline,
 } from '../world/BrowserRenderer';
-
-gsap.registerPlugin(ScrollTrigger);
 
 export default function AnimatedPackets() {
   const searchPacketRef = useRef();
@@ -70,17 +69,8 @@ export default function AnimatedPackets() {
       if (ref.current) gsap.set(ref.current.scale, { x: 0, y: 0, z: 0 });
     });
 
-    setTimeout(() => ScrollTrigger.refresh(true), 800);
-
-    const tl = gsap.timeline({
-      scrollTrigger: {
-        id: 'packets-animation',
-        trigger: '.scroll-container',
-        start: 'top top',
-        end: 'bottom bottom',
-        scrub: 4,
-      },
-    });
+    // Paused timeline on a 0–1 scale; the player scrubs it.
+    const tl = gsap.timeline({ paused: true });
 
     // ========== MAIN PACKET JOURNEY (0-10%) ==========
 
@@ -306,28 +296,28 @@ export default function AnimatedPackets() {
     tl.to(compositeRef.current.scale, { x: 0.8, y: 0.8, z: 0.8, duration: 0.02 }, 0.92);
     tl.set(compositeRef.current.position, { x: browserX, y: 1, z: 3 }, 0.92);
 
+    const unregister = registerTimeline(tl);
     return () => {
+      unregister();
       tl.kill();
-      const st = ScrollTrigger.getById('packets-animation');
-      if (st) st.kill();
     };
   }, [initialized]);
 
   return (
     <group>
       {/* Main Request Packet — showData shows IP address billboard */}
-      <TCPPacket ref={searchPacketRef} position={[-10, 0.5, 0]} color="#3b82f6" label="Request" showData />
+      <TCPPacket ref={searchPacketRef} position={[-10, 0.5, 0]} color={LAYER.application} label="Request" showData />
 
       {/* TCP Handshake Packets */}
-      <HandshakePacket ref={synRef} position={[25, -5, 0]} color="#f97316" label="SYN" />
-      <HandshakePacket ref={synAckRef} position={[32, -5, 0]} color="#8b5cf6" label="SYN-ACK" />
-      <HandshakePacket ref={ackRef} position={[25, -5, 0]} color="#22c55e" label="ACK" />
+      <HandshakePacket ref={synRef} position={[25, -5, 0]} color={LAYER.transport} label="SYN" />
+      <HandshakePacket ref={synAckRef} position={[32, -5, 0]} color={LAYER.transport} label="SYN-ACK" />
+      <HandshakePacket ref={ackRef} position={[25, -5, 0]} color={LAYER.transport} label="ACK" />
 
       {/* SSL Handshake Packets */}
-      <SSLPacket ref={clientHelloRef} position={[25, -5, 0]} color="#06b6d4" label="Client Hello" />
-      <SSLPacket ref={serverHelloRef} position={[32, -5, 0]} color="#ec4899" label="Server Hello" />
-      <SSLPacket ref={keyExchangeRef} position={[25, -5, 0]} color="#eab308" label="Key Exchange" />
-      <SSLPacket ref={finishedRef} position={[28, -5, 0]} color="#22c55e" label="Secure" isLock />
+      <SSLPacket ref={clientHelloRef} position={[25, -5, 0]} color={LAYER.security} label="Client Hello" />
+      <SSLPacket ref={serverHelloRef} position={[32, -5, 0]} color={LAYER.security} label="Server Hello" />
+      <SSLPacket ref={keyExchangeRef} position={[25, -5, 0]} color={LAYER.security} label="Key Exchange" />
+      <SSLPacket ref={finishedRef} position={[28, -5, 0]} color={LAYER.security} label="Secure" isLock />
 
       {/* HTTP Response Packets */}
       <ResponsePacket ref={htmlPacketRef} position={[32, -5, 0]} type="html" />

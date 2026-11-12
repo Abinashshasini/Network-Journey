@@ -1,9 +1,12 @@
 import { useRef, forwardRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Text, Trail } from '@react-three/drei';
+import { accent } from '../theme/materials';
+import { useTheme, LAYER } from '../theme/tokens';
 
 const HandshakePacket = forwardRef(
-  ({ position, color = '#3b82f6', label, size = 0.3 }, ref) => {
+  ({ position, color = LAYER.transport, label, size = 0.3 }, ref) => {
+    const theme = useTheme();
     const meshRef = useRef();
 
     useFrame((state) => {
@@ -16,19 +19,11 @@ const HandshakePacket = forwardRef(
       <group position={position} ref={ref}>
         <Trail width={0.5} length={5} color={color} attenuation={(w) => w * w}>
           <group ref={meshRef}>
-            <mesh>
+            <mesh material={accent(color)}>
               <boxGeometry args={[size * 2, size, size * 1.5]} />
-              <meshStandardMaterial
-                color={color}
-                emissive={color}
-                emissiveIntensity={0.5}
-                roughness={0.3}
-                metalness={0.2}
-              />
             </mesh>
-            <mesh position={[size * 1.2, 0, 0]} rotation={[0, 0, -Math.PI / 2]}>
+            <mesh position={[size * 1.2, 0, 0]} rotation={[0, 0, -Math.PI / 2]} material={accent(color, 1.8)}>
               <coneGeometry args={[size * 0.3, size * 0.5, 4]} />
-              <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.6} />
             </mesh>
           </group>
         </Trail>
@@ -36,7 +31,7 @@ const HandshakePacket = forwardRef(
         <Text
           position={[0, size + 0.3, 0]}
           fontSize={0.18}
-          color="#ffffff"
+          color={theme.text}
           anchorX="center"
           fontWeight="bold"
         >

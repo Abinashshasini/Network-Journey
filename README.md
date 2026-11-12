@@ -96,7 +96,7 @@ Watch the DOM tree construct, styles cascade, and pixels paint to complete the j
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                                                             │
-│   ◉ Scroll-driven 3D camera flight through network topology│
+│   ◉ Play / pause / step-through 3D camera flight           │
 │   ◉ Real-time ARP, NAT, and Load Balancer visualizations   │
 │   ◉ Animated data packets with physics-based motion        │
 │   ◉ Educational HUD with phase-by-phase explanations       │
@@ -119,8 +119,7 @@ Watch the DOM tree construct, styles cascade, and pixels paint to complete the j
 | ⚛️  | **React 19**             | Component Architecture        |
 | 🎮  | **React Three Fiber**    | Declarative 3D Rendering      |
 | 🌐  | **Three.js**             | WebGL Engine                  |
-| 🎬  | **GSAP + ScrollTrigger** | Scroll-Synchronized Animation |
-| 🌊  | **Lenis**                | Butter-Smooth Scrolling       |
+| 🎬  | **GSAP**                 | Timeline-driven playback      |
 | ⚡  | **Vite**                 | Lightning-Fast Dev Server     |
 | 🎨  | **Drei**                 | 3D Component Library          |
 

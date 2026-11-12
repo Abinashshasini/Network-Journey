@@ -8,14 +8,15 @@
       name="description"
       content="A cinematic 3D visualization of how your browser connects to the internet — from DNS lookup to page render"
     />
-    <meta name="theme-color" content="#0f172a" />
+    <meta name="theme-color" content="#0a0a0a" />
     <title>Network Journey | Visualize the Invisible Internet</title>
+    <link rel="preload" href="/fonts/jetbrains-mono-500.woff" as="font" type="font/woff" crossorigin />
     <script>
-      // Immediately disable browser scroll restoration - runs before anything else
-      if ('scrollRestoration' in history) {
-        history.scrollRestoration = 'manual';
-      }
-      window.scrollTo(0, 0);
+      // Apply saved theme before first paint (no flash)
+      try {
+        var t = localStorage.getItem('nj-theme');
+        if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+      } catch (e) {}
     </script>
   </head>
   <body>

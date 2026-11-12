@@ -1,24 +1,45 @@
 import { useRef, forwardRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Text, RoundedBox, Trail } from '@react-three/drei';
+import { MONO, accent } from '../theme/materials';
+import { useTheme, LAYER } from '../theme/tokens';
+
+// All payload types are application-layer: same hue, told apart by the
+// "document" line pattern on the face and the type tag.
+//   html — three full-width lines (markup block)
+//   css  — indented rule lines (selector + declarations)
+//   js   — staggered, shortening lines (code)
+const TYPE_LINES = {
+  html: [
+    { y: 0.2, w: 0.5, x: 0 },
+    { y: 0, w: 0.5, x: 0 },
+    { y: -0.2, w: 0.5, x: 0 },
+  ],
+  css: [
+    { y: 0.2, w: 0.5, x: 0 },
+    { y: 0, w: 0.36, x: 0.07 },
+    { y: -0.2, w: 0.36, x: 0.07 },
+  ],
+  js: [
+    { y: 0.2, w: 0.5, x: 0 },
+    { y: 0, w: 0.38, x: 0.06 },
+    { y: -0.2, w: 0.24, x: -0.13 },
+  ],
+};
+
+const typeLabels = {
+  html: 'HTML',
+  css: 'CSS',
+  js: 'JS',
+};
 
 const ResponsePacket = forwardRef(
-  ({ position, color = '#22c55e', label, type = 'html' }, ref) => {
+  ({ position, color = LAYER.application, label, type = 'html' }, ref) => {
+    const theme = useTheme();
     const meshRef = useRef();
 
-    const typeColors = {
-      html: '#f97316',
-      css: '#3b82f6',
-      js: '#eab308',
-    };
-
-    const typeLabels = {
-      html: 'HTML',
-      css: 'CSS',
-      js: 'JS',
-    };
-
-    const packetColor = typeColors[type] || color;
+    const packetColor = color;
+    const lines = TYPE_LINES[type] || TYPE_LINES.html;
 
     useFrame((state) => {
       if (!meshRef.current) return;
@@ -30,33 +51,24 @@ const ResponsePacket = forwardRef(
       <group position={position} ref={ref}>
         <Trail width={0.5} length={6} color={packetColor} attenuation={(w) => w * w}>
           <group ref={meshRef}>
-            <RoundedBox args={[0.8, 1, 0.2]} radius={0.05}>
-              <meshStandardMaterial
-                color={packetColor}
-                emissive={packetColor}
-                emissiveIntensity={0.4}
-                roughness={0.3}
-              />
-            </RoundedBox>
+            <RoundedBox args={[0.8, 1, 0.2]} radius={0.05} material={accent(packetColor, 1.3)} />
 
-            {[-0.2, 0, 0.2].map((y, i) => (
-              <mesh key={i} position={[0, y, 0.11]}>
-                <boxGeometry args={[0.5, 0.08, 0.01]} />
-                <meshStandardMaterial color="#ffffff" opacity={0.6} transparent />
+            {lines.map((l, i) => (
+              <mesh key={i} position={[l.x, l.y, 0.11]} material={MONO.screen}>
+                <boxGeometry args={[l.w, 0.08, 0.01]} />
               </mesh>
             ))}
 
-            <mesh position={[0.25, 0.35, 0.11]}>
+            <mesh position={[0.25, 0.35, 0.11]} material={MONO.body}>
               <boxGeometry args={[0.3, 0.15, 0.02]} />
-              <meshStandardMaterial color="#1e293b" />
             </mesh>
-            <Text position={[0.25, 0.35, 0.13]} fontSize={0.08} color="#ffffff" anchorX="center">
+            <Text position={[0.25, 0.35, 0.13]} fontSize={0.08} color={theme.text} anchorX="center">
               {typeLabels[type]}
             </Text>
           </group>
         </Trail>
 
-        <Text position={[0, -0.7, 0]} fontSize={0.15} color="#ffffff" anchorX="center">
+        <Text position={[0, -0.7, 0]} fontSize={0.15} color={theme.text} anchorX="center">
           {label}
         </Text>
       </group>

@@ -1,43 +1,52 @@
-import { Text, RoundedBox } from '@react-three/drei';
+import { Text, RoundedBox, Edges } from '@react-three/drei';
 import { forwardRef } from 'react';
+import { MONO, accent } from '../theme/materials';
+import { useTheme, LAYER } from '../theme/tokens';
 
 /**
  * NAT Gateway visualization - shows IP translation
  */
 export const NATGateway = forwardRef(({ position = [0, 0, 0] }, ref) => {
+  const theme = useTheme();
   return (
     <group position={position} ref={ref} scale={1.5}>
       {/* Gateway box */}
-      <RoundedBox args={[1.5, 1, 0.8]} radius={0.1}>
-        <meshStandardMaterial color="#1e293b" metalness={0.3} roughness={0.7} />
+      <RoundedBox args={[1.5, 1, 0.8]} radius={0.1} material={MONO.body}>
+        <Edges threshold={15} color={theme.line} />
       </RoundedBox>
 
       {/* NAT label */}
       <Text
         position={[0, 0.2, 0.45]}
         fontSize={0.2}
-        color="#eab308"
+        color={LAYER.network}
         anchorX="center"
         fontWeight="bold"
       >
         NAT
       </Text>
 
-      {/* Translation arrows */}
-      <mesh position={[-0.9, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+      {/* Translation arrows: private side in mono, public side in network accent */}
+      <mesh
+        position={[-0.9, 0, 0]}
+        rotation={[0, 0, Math.PI / 2]}
+        material={MONO.screen}
+      >
         <coneGeometry args={[0.1, 0.2, 8]} />
-        <meshStandardMaterial color="#3b82f6" />
       </mesh>
-      <mesh position={[0.9, 0, 0]} rotation={[0, 0, -Math.PI / 2]}>
+      <mesh
+        position={[0.9, 0, 0]}
+        rotation={[0, 0, -Math.PI / 2]}
+        material={accent('network')}
+      >
         <coneGeometry args={[0.1, 0.2, 8]} />
-        <meshStandardMaterial color="#22c55e" />
       </mesh>
 
       {/* Private side indicator */}
       <Text
         position={[-0.9, -0.3, 0.45]}
         fontSize={0.08}
-        color="#3b82f6"
+        color={theme.textMuted}
         anchorX="center"
       >
         Private
@@ -47,7 +56,7 @@ export const NATGateway = forwardRef(({ position = [0, 0, 0] }, ref) => {
       <Text
         position={[0.9, -0.3, 0.45]}
         fontSize={0.08}
-        color="#22c55e"
+        color={LAYER.network}
         anchorX="center"
       >
         Public
@@ -57,7 +66,7 @@ export const NATGateway = forwardRef(({ position = [0, 0, 0] }, ref) => {
       <Text
         position={[0, -0.8, 0]}
         fontSize={0.15}
-        color="#94a3b8"
+        color={theme.textMuted}
         anchorX="center"
       >
         Network Address Translation
@@ -70,6 +79,7 @@ export const NATGateway = forwardRef(({ position = [0, 0, 0] }, ref) => {
  * NAT Translation Table
  */
 export const NATTable = forwardRef(({ position = [0, 0, 0] }, ref) => {
+  const theme = useTheme();
   const translations = [
     {
       private: '192.168.1.5:54321',
@@ -87,26 +97,22 @@ export const NATTable = forwardRef(({ position = [0, 0, 0] }, ref) => {
       protocol: 'UDP',
     },
   ];
+  // Row 0 is our laptop's connection - the highlighted mapping.
+  const HIGHLIGHT_ROW = 0;
 
   return (
     <group position={position} ref={ref}>
-      {/* Table background */}
-      <mesh position={[0, 0, -0.1]}>
+      {/* Table background + outline */}
+      <mesh position={[0, 0, -0.1]} material={MONO.panel}>
         <planeGeometry args={[4, 2.2]} />
-        <meshStandardMaterial color="#1e293b" transparent opacity={0.95} />
-      </mesh>
-
-      {/* Border glow */}
-      <mesh position={[0, 0, -0.12]}>
-        <planeGeometry args={[4.1, 2.3]} />
-        <meshStandardMaterial color="#eab308" transparent opacity={0.3} />
+        <Edges threshold={15} color={theme.line} />
       </mesh>
 
       {/* Title */}
       <Text
         position={[0, 0.9, 0]}
         fontSize={0.18}
-        color="#eab308"
+        color={theme.text}
         anchorX="center"
         fontWeight="bold"
       >
@@ -117,7 +123,7 @@ export const NATTable = forwardRef(({ position = [0, 0, 0] }, ref) => {
       <Text
         position={[-1.5, 0.55, 0]}
         fontSize={0.1}
-        color="#94a3b8"
+        color={theme.textMuted}
         anchorX="left"
       >
         Private IP:Port
@@ -125,7 +131,7 @@ export const NATTable = forwardRef(({ position = [0, 0, 0] }, ref) => {
       <Text
         position={[0.3, 0.55, 0]}
         fontSize={0.1}
-        color="#94a3b8"
+        color={theme.textMuted}
         anchorX="left"
       >
         Public IP:Port
@@ -133,66 +139,68 @@ export const NATTable = forwardRef(({ position = [0, 0, 0] }, ref) => {
       <Text
         position={[1.5, 0.55, 0]}
         fontSize={0.1}
-        color="#94a3b8"
+        color={theme.textMuted}
         anchorX="left"
       >
         Proto
       </Text>
 
-      {/* Separator */}
-      <mesh position={[0, 0.4, 0]}>
+      {/* Header rule (network accent) */}
+      <mesh position={[0, 0.4, 0]} material={accent('network', 1.0)}>
         <planeGeometry args={[3.8, 0.01]} />
-        <meshStandardMaterial color="#475569" />
       </mesh>
 
       {/* Translation entries */}
-      {translations.map((entry, i) => (
-        <group key={i} position={[0, 0.15 - i * 0.35, 0]}>
-          <Text
-            position={[-1.5, 0, 0]}
-            fontSize={0.1}
-            color="#3b82f6"
-            anchorX="left"
-            fontFamily="monospace"
-          >
-            {entry.private}
-          </Text>
+      {translations.map((entry, i) => {
+        const hi = i === HIGHLIGHT_ROW;
+        return (
+          <group key={i} position={[0, 0.15 - i * 0.35, 0]}>
+            <Text
+              position={[-1.5, 0, 0]}
+              fontSize={0.1}
+              color={theme.text}
+              anchorX="left"
+              fontFamily="monospace"
+            >
+              {entry.private}
+            </Text>
 
-          {/* Arrow */}
-          <Text
-            position={[0, 0, 0]}
-            fontSize={0.12}
-            color="#64748b"
-            anchorX="center"
-          >
-            →
-          </Text>
+            {/* Arrow */}
+            <Text
+              position={[0, 0, 0]}
+              fontSize={0.12}
+              color={hi ? LAYER.network : theme.textMuted}
+              anchorX="center"
+            >
+              {'->'}
+            </Text>
 
-          <Text
-            position={[0.3, 0, 0]}
-            fontSize={0.1}
-            color="#22c55e"
-            anchorX="left"
-            fontFamily="monospace"
-          >
-            {entry.public}
-          </Text>
-          <Text
-            position={[1.5, 0, 0]}
-            fontSize={0.1}
-            color="#94a3b8"
-            anchorX="left"
-          >
-            {entry.protocol}
-          </Text>
-        </group>
-      ))}
+            <Text
+              position={[0.3, 0, 0]}
+              fontSize={0.1}
+              color={hi ? LAYER.network : theme.text}
+              anchorX="left"
+              fontFamily="monospace"
+            >
+              {entry.public}
+            </Text>
+            <Text
+              position={[1.5, 0, 0]}
+              fontSize={0.1}
+              color={theme.textMuted}
+              anchorX="left"
+            >
+              {entry.protocol}
+            </Text>
+          </group>
+        );
+      })}
 
       {/* Caption */}
       <Text
         position={[0, -0.95, 0]}
         fontSize={0.08}
-        color="#64748b"
+        color={theme.textMuted}
         anchorX="center"
       >
         Translates private addresses to public for internet communication
@@ -213,17 +221,18 @@ export const IPTransform = forwardRef(
     },
     ref,
   ) => {
+    const theme = useTheme();
     return (
       <group position={position} ref={ref}>
         {/* Private IP box */}
         <group position={[-1.5, 0, 0]}>
-          <RoundedBox args={[1.2, 0.5, 0.2]} radius={0.05}>
-            <meshStandardMaterial color="#3b82f6" />
+          <RoundedBox args={[1.2, 0.5, 0.2]} radius={0.05} material={MONO.panel}>
+            <Edges threshold={15} color={theme.line} />
           </RoundedBox>
           <Text
             position={[0, 0, 0.15]}
             fontSize={0.1}
-            color="#ffffff"
+            color={theme.text}
             anchorX="center"
             fontFamily="monospace"
           >
@@ -232,7 +241,7 @@ export const IPTransform = forwardRef(
           <Text
             position={[0, -0.4, 0]}
             fontSize={0.08}
-            color="#94a3b8"
+            color={theme.textMuted}
             anchorX="center"
           >
             Private IP
@@ -241,33 +250,35 @@ export const IPTransform = forwardRef(
 
         {/* Transformation arrow */}
         <group position={[0, 0, 0]}>
-          <mesh rotation={[0, 0, -Math.PI / 2]}>
+          <mesh rotation={[0, 0, -Math.PI / 2]} material={accent('network')}>
             <cylinderGeometry args={[0.03, 0.03, 0.8, 8]} />
-            <meshStandardMaterial color="#eab308" />
           </mesh>
-          <mesh position={[0.5, 0, 0]} rotation={[0, 0, -Math.PI / 2]}>
+          <mesh
+            position={[0.5, 0, 0]}
+            rotation={[0, 0, -Math.PI / 2]}
+            material={accent('network')}
+          >
             <coneGeometry args={[0.08, 0.15, 8]} />
-            <meshStandardMaterial color="#eab308" />
           </mesh>
           <Text
             position={[0, 0.25, 0]}
             fontSize={0.08}
-            color="#eab308"
+            color={LAYER.network}
             anchorX="center"
           >
             NAT
           </Text>
         </group>
 
-        {/* Public IP box */}
+        {/* Public IP box (network-accent outline) */}
         <group position={[1.5, 0, 0]}>
-          <RoundedBox args={[1.2, 0.5, 0.2]} radius={0.05}>
-            <meshStandardMaterial color="#22c55e" />
+          <RoundedBox args={[1.2, 0.5, 0.2]} radius={0.05} material={MONO.panel}>
+            <Edges threshold={15} color={LAYER.network} />
           </RoundedBox>
           <Text
             position={[0, 0, 0.15]}
             fontSize={0.1}
-            color="#ffffff"
+            color={theme.text}
             anchorX="center"
             fontFamily="monospace"
           >
@@ -276,7 +287,7 @@ export const IPTransform = forwardRef(
           <Text
             position={[0, -0.4, 0]}
             fontSize={0.08}
-            color="#94a3b8"
+            color={theme.textMuted}
             anchorX="center"
           >
             Public IP
